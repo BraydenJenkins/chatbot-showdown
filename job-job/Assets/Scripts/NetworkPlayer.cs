@@ -64,6 +64,13 @@ public class NetworkPlayer : NetworkBehaviour
     public void SetAvatar(int index)
     {
         Debug.Log("Setting avatar for " + playerName.Value + " to " + index);
+
+        // for some reason, stickman is not being set to inactive (index 0)
+
+        // lets set it to inactive here to see if that fixes it
+        avatars[0].gameObject.SetActive(false);
+        // that fixed it. just gonna leave it like this for now
+
         // Set the avatar based on the index
         avatars[index].gameObject.SetActive(true);
     }
