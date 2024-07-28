@@ -13,6 +13,12 @@ public class PagingScrollRect : MonoBehaviour, IBeginDragHandler, IEndDragHandle
     private bool isDragging = false;
     private Vector2 targetPosition;
 
+    private int currentPageIndex = 0;
+    public int CurrentPageIndex
+    {
+        get { return currentPageIndex; }
+    }
+
     void Start()
     {
         // Ensure the ScrollRect component is assigned
@@ -68,6 +74,8 @@ public class PagingScrollRect : MonoBehaviour, IBeginDragHandler, IEndDragHandle
 
         if (closestChild != null)
         {
+            currentPageIndex = closestChild.GetSiblingIndex();
+
             targetPosition = -closestChild.anchoredPosition + new Vector2(closestChild.rect.width / 2, 0);
 
             if (!scrollRect.horizontal)
