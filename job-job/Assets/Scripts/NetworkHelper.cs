@@ -10,6 +10,8 @@ public class NetworkHelper : MonoBehaviour
 {
     [SerializeField] private CanvasGroup mainCanvas;
 
+    [SerializeField] private GameObject gameRoot;
+
     public void OnClientConnectedCallback(ulong clientId)
     {
         if (NetworkManager.Singleton.IsClient && NetworkManager.Singleton.LocalClientId == clientId)
@@ -22,6 +24,8 @@ public class NetworkHelper : MonoBehaviour
             {
                 mainCanvas.gameObject.SetActive(false);
             });
+
+            gameRoot.SetActive(true);
         }
     }
 
