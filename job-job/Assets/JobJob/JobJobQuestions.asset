@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f03f27a11e47b04e8ecb3841699accf, type: 3}
+  m_Name: JobJobQuestions
+  m_EditorClassIdentifier: 
+  questions:
+  - Describe the worst first date you've ever been on.
+  - What are the biggest red flags in a partner?
+  - What are the biggest green flags in a partner?
+  - Describe the main character from the coolest movie you've ever seen.
+  - Describe the main character from the scariest movie you've ever seen.
+  - Describe the main character from the funniest movie you've ever seen.

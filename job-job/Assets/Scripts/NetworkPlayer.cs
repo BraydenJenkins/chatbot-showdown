@@ -12,6 +12,7 @@ public class NetworkPlayer : NetworkBehaviour
     [SerializeField] private Avatar[] avatars;
     private NavMeshAgent navMeshAgent;
     [SerializeField] private TMP_Text playerNameText;
+    private PlayerManager playerManager;
 
     // network vars
 
@@ -21,7 +22,7 @@ public class NetworkPlayer : NetworkBehaviour
 
 
     // job job
-    public NetworkVariable<FixedString512Bytes> question = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString512Bytes> question = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString512Bytes> answer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
 
@@ -39,7 +40,7 @@ public class NetworkPlayer : NetworkBehaviour
             return;
 
         // link to the player manager
-        var playerManager = FindObjectOfType<PlayerManager>();
+        playerManager = FindObjectOfType<PlayerManager>();
         playerManager.LinkNetworkPlayer(this);
 
         // testing nav mesh
@@ -74,6 +75,10 @@ public class NetworkPlayer : NetworkBehaviour
     private void OnQuestionChanged(FixedString512Bytes previous, FixedString512Bytes current)
     {
         Debug.Log("Question changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.JJ_SetQuestion(current.ToString());
+        }
     }
 
     private void OnAnswerChanged(FixedString512Bytes previous, FixedString512Bytes current)
