@@ -104,7 +104,39 @@ public class JobJobManager : NetworkBehaviour
 
         Debug.Log("All players have answered");
 
-        // do something
+        // need to notify players (in some form or another) that all players have answered
+        // next step is to send the answer fragments to the players
+
+        // there are a number of ways to do this, but for now:
+        // for each player, send random fragments of other players' answers
+
+        for (int i = 0; i < players.Count; i++)
+        {
+            var player = players[i];
+            var otherPlayers = players.FindAll(p => p.OwnerClientId != player.OwnerClientId);
+
+            for (int j = 0; j < otherPlayers.Count; j++)
+            {
+                var otherPlayer = otherPlayers[j];
+                var otherPlayerAnswer = otherPlayer.answer.Value.ToString();
+                // split the answer into fragments
+                var fragments = otherPlayerAnswer.Split(' ');
+                // shuffle the fragments, then take half
+                var randomFragments = new List<string>(fragments);
+                // shuffle 
+                for (int k = 0; k < randomFragments.Count; k++)
+                {
+                    var temp = randomFragments[k];
+                    var randomIndex = Random.Range(0, randomFragments.Count);
+                    randomFragments[k] = randomFragments[randomIndex];
+                    randomFragments[randomIndex] = temp;
+                }
+                var randomFragmentCount = randomFragments.Count / 2;
+                var randomFragment = string.Join(" ", randomFragments.GetRange(0, randomFragmentCount));
+                player.fragments.Value = randomFragment;
+            }
+        }
+
 
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.UI;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -24,9 +25,13 @@ public class PlayerManager : MonoBehaviour
     // job job
     [Header("Job Job")]
     [SerializeField] private CanvasGroup jobjobCanvas;
-    [SerializeField] private GameObject questionPanel, waitingPanel;
+    [SerializeField] private GameObject questionPanel, waitingPanel, fragmentsPanel;
     [SerializeField] private TMP_Text questionText;
     [SerializeField] private TMP_InputField answerInputField;
+
+    [SerializeField] private RectTransform wordArea;
+    [SerializeField] private Button wordButtonPrefab;
+    [SerializeField] private TMP_Text fragmentsTMP;
 
     private void Awake()
     {
@@ -35,6 +40,7 @@ public class PlayerManager : MonoBehaviour
         jobjobCanvas.blocksRaycasts = false;
         questionPanel.SetActive(false);
         waitingPanel.SetActive(false);
+        fragmentsPanel.SetActive(false);
     }
 
     public void JJ_SetQuestion(string question)
@@ -53,5 +59,30 @@ public class PlayerManager : MonoBehaviour
         networkPlayer.answer.Value = answerInputField.text;
         questionPanel.SetActive(false);
         waitingPanel.SetActive(true);
+    }
+
+    public void JJ_SetFragments(string fragments)
+    {
+        // remove non-alphanumeric characters
+        fragments = System.Text.RegularExpressions.Regex.Replace(fragments, @"[^0-9a-zA-Z]+", " ");
+        // split fragments by space, create buttons for each fragment
+        var fragmentArray = fragments.Split(' ');
+        for (int i = 0; i < fragmentArray.Length; i++)
+        {
+            if (string.IsNullOrEmpty(fragmentArray[i]))
+            {
+                continue;
+            }
+            var button = Instantiate(wordButtonPrefab, wordArea);
+            button.GetComponentInChildren<TMP_Text>().text = fragmentArray[i];
+            string fragment = fragmentArray[i];
+            button.onClick.AddListener(() =>
+            {
+                fragmentsTMP.text += fragment + " ";
+            });
+        }
+
+        waitingPanel.SetActive(false);
+        fragmentsPanel.SetActive(true);
     }
 }

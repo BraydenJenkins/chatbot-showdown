@@ -24,6 +24,7 @@ public class NetworkPlayer : NetworkBehaviour
     // job job
     public NetworkVariable<FixedString512Bytes> question = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString512Bytes> answer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString512Bytes> fragments = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
 
 
@@ -67,6 +68,7 @@ public class NetworkPlayer : NetworkBehaviour
         // job job
         question.OnValueChanged += OnQuestionChanged;
         answer.OnValueChanged += OnAnswerChanged;
+        fragments.OnValueChanged += OnFragmentsChanged;
 
     }
 
@@ -84,6 +86,15 @@ public class NetworkPlayer : NetworkBehaviour
     private void OnAnswerChanged(FixedString512Bytes previous, FixedString512Bytes current)
     {
         Debug.Log("Answer changed from " + previous + " to " + current);
+    }
+
+    private void OnFragmentsChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("Fragments changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.JJ_SetFragments(current.ToString());
+        }
     }
 
 
