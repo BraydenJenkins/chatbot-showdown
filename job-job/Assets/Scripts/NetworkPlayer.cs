@@ -20,6 +20,10 @@ public class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<Vector3> targetPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
 
+    // job job
+    public NetworkVariable<FixedString512Bytes> question = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString512Bytes> answer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
 
 
     private void Start()
@@ -58,9 +62,30 @@ public class NetworkPlayer : NetworkBehaviour
         {
             navMeshAgent.SetDestination(current);
         };
+
+        // job job
+        question.OnValueChanged += OnQuestionChanged;
+        answer.OnValueChanged += OnAnswerChanged;
+
+    }
+
+    #region Job Job
+
+    private void OnQuestionChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("Question changed from " + previous + " to " + current);
+    }
+
+    private void OnAnswerChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("Answer changed from " + previous + " to " + current);
     }
 
 
+    #endregion
+
+
+    #region Avatars and Customization
     public void SetAvatar(int index)
     {
         Debug.Log("Setting avatar for " + playerName.Value + " to " + index);
@@ -91,6 +116,8 @@ public class NetworkPlayer : NetworkBehaviour
     {
         SetNameTMP(current);
     }
+
+    #endregion
 
     private IEnumerator RandomWalkCoroutine()
     {

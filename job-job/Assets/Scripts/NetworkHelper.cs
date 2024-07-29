@@ -12,6 +12,28 @@ public class NetworkHelper : MonoBehaviour
 
     [SerializeField] private GameObject gameRoot;
 
+    private void Awake()
+    {
+        // hide game root since we are not connected yet
+
+        gameRoot.SetActive(false);
+    }
+
+
+    void Start()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
+
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
+    }
+
+    private void OnDestroy()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
+
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+    }
+
     public void OnClientConnectedCallback(ulong clientId)
     {
         if (NetworkManager.Singleton.IsClient && NetworkManager.Singleton.LocalClientId == clientId)
@@ -38,21 +60,6 @@ public class NetworkHelper : MonoBehaviour
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }
-
-    void Start()
-    {
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
-
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
-    }
-
-    private void OnDestroy()
-    {
-        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
-
-        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
-    }
-
 
     public void StartHost()
     {
