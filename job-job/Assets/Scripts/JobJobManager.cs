@@ -203,6 +203,62 @@ public class JobJobManager : NetworkBehaviour
         }
 
 
+
+        // now that we have sent the fragments to the players, start listening for their answers once again
+        for (int i = 0; i < players.Count; i++)
+        {
+            var player = players[i];
+            playerAnswers[player.OwnerClientId] = false;
+            player.answer.OnValueChanged += (prev, current) =>
+            {
+                OnAnswerReceived(prev, current, player.OwnerClientId);
+            };
+        }
+    }
+
+    private void OnFragmentsAnswerReceived(FixedString512Bytes prev, FixedString512Bytes current, ulong clientId)
+    {
+        // do something
+        Debug.Log("Fragments answer received from " + clientId + ": " + current);
+
+        // remove the event listener
+        var player = players.Find(p => p.OwnerClientId == clientId);
+        if (player == null)
+        {
+            Debug.LogError("Player " + clientId + " not found");
+            return;
+        }
+        player.fragments.OnValueChanged -= (prev, current) =>
+        {
+            OnFragmentsAnswerReceived(prev, current, clientId);
+        };
+
+        playerAnswers[clientId] = true;
+
+        CheckReceivedAllFragmentsAnswers();
+    }
+
+    private void CheckReceivedAllFragmentsAnswers()
+    {
+        if (!IsServer)
+            return;
+
+        Debug.Log("Connected players:");
+        foreach (var player in players)
+        {
+            Debug.Log(player.OwnerClientId);
+        }
+
+        foreach (var player in playerAnswers)
+        {
+            Debug.Log("Player " + player.Key + " answered: " + player.Value);
+            if (!player.Value)
+                return;
+        }
+
+        Debug.Log("All players have answered");
+
+
     }
 
     public static List<string> ShuffleFragmentGroups(List<string> fragments, int groupSize = 3)
