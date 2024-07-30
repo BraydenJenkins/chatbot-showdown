@@ -11,6 +11,7 @@ public class NetworkPlayer : NetworkBehaviour
     // references
     [SerializeField] private Avatar[] avatars;
     private NavMeshAgent navMeshAgent;
+    private Coroutine randomWalkCoroutine;
     [SerializeField] private TMP_Text playerNameText;
     private PlayerManager playerManager;
 
@@ -37,6 +38,9 @@ public class NetworkPlayer : NetworkBehaviour
 
     public NetworkVariable<FixedString512Bytes> bot = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    public NetworkVariable<int> activityIndex = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> myTurn = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
 
 
     private void Start()
@@ -56,7 +60,7 @@ public class NetworkPlayer : NetworkBehaviour
         playerManager.LinkNetworkPlayer(this);
 
         // testing nav mesh
-        StartCoroutine(RandomWalkCoroutine());
+        randomWalkCoroutine = StartCoroutine(RandomWalkCoroutine());
     }
 
     public override void OnNetworkSpawn()
@@ -87,6 +91,9 @@ public class NetworkPlayer : NetworkBehaviour
 
         roleOptions.OnValueChanged += OnRoleOptionsChanged;
         adjectiveOptions.OnValueChanged += OnAdjectiveOptionsChanged;
+
+        activityIndex.OnValueChanged += OnActivityChanged;
+        myTurn.OnValueChanged += OnMyTurnChanged;
 
     }
 
@@ -147,6 +154,24 @@ public class NetworkPlayer : NetworkBehaviour
         }
     }
 
+    private void OnActivityChanged(int previous, int current)
+    {
+        Debug.Log("Activity changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetActivity(current);
+        }
+    }
+
+    private void OnMyTurnChanged(bool previous, bool current)
+    {
+        Debug.Log("My turn changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+
+        }
+    }
+
     #endregion
 
     #region Avatars and Customization
@@ -192,4 +217,14 @@ public class NetworkPlayer : NetworkBehaviour
             yield return new WaitForSeconds(5);
         }
     }
+
+    [Rpc(SendTo.Owner)]
+    public void SetTargetPositionRpc(Vector3 position)
+    {
+        StopCoroutine(randomWalkCoroutine);
+
+        targetPosition.Value = position;
+    }
+
+
 }

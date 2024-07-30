@@ -128,6 +128,9 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private RectTransform roleOptionsArea;
     [SerializeField] private TMP_Text roleOptionsText;
 
+    // activity
+    [SerializeField] private GameObject baristaActivity;
+
     private void Roles_Awake()
     {
         SetCanvasGroup(rolesCanvas, false);
@@ -215,6 +218,14 @@ public class PlayerManager : MonoBehaviour
 
         SetCanvasGroup(roleOptionsPanel, false, transitionDuration);
         SetCanvasGroup(rolesWaitingPanel, true, transitionDuration);
+    }
+
+    public void Roles_SetActivity(int index)
+    {
+        // TODO: support multiple activities
+
+        SetCanvasGroup(rolesWaitingPanel, false, transitionDuration);
+        baristaActivity.SetActive(true);
     }
 
     #endregion

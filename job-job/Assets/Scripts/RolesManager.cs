@@ -45,6 +45,8 @@ public class RolesManager : NetworkBehaviour
 
     private Dictionary<ulong, bool> botCreated = new Dictionary<ulong, bool>();
 
+    [SerializeField] private RolesActivity[] activities;
+
     private void Awake()
     {
         serverCanvas.gameObject.SetActive(false);
@@ -406,6 +408,32 @@ public class RolesManager : NetworkBehaviour
         }
 
         Debug.Log("[Roles]: All bots have been created");
+
+        players.Clear();
+        var clients = NetworkManager.Singleton.ConnectedClientsList;
+        foreach (var client in clients)
+        {
+            var player = client.PlayerObject.GetComponent<NetworkPlayer>();
+            players.Add(player);
+        }
+
+        int activityIndex = 0;
+
+        for (int i = 0; i < players.Count; i++)
+        {
+            NetworkPlayer player = players[i];
+
+            player.activityIndex.Value = activityIndex;
+        }
+
+        // start the activity
+
+        var activity = activities[activityIndex];
+
+        players[0].myTurn.Value = true;
+        players[0].SetTargetPositionRpc(activity.navTarget.position);
+
+
     }
 
     // Helper method to shuffle a list
