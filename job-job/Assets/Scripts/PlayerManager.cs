@@ -64,7 +64,7 @@ public class PlayerManager : MonoBehaviour
     public void JJ_SetFragments(string fragments)
     {
         // remove non-alphanumeric characters
-        fragments = System.Text.RegularExpressions.Regex.Replace(fragments, @"[^0-9a-zA-Z]+", " ");
+        // fragments = System.Text.RegularExpressions.Regex.Replace(fragments, @"[^0-9a-zA-Z]+", " ");
         // split fragments by space, create buttons for each fragment
         var fragmentArray = fragments.Split(' ');
         for (int i = 0; i < fragmentArray.Length; i++)

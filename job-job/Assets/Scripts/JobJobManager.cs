@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -14,6 +15,7 @@ public class JobJobManager : NetworkBehaviour
 
     private List<NetworkPlayer> players = new List<NetworkPlayer>();
 
+    [SerializeField] private string[] requiredFragments;
 
     private void Awake()
     {
@@ -115,10 +117,17 @@ public class JobJobManager : NetworkBehaviour
             var player = players[i];
             var otherPlayers = players.FindAll(p => p.OwnerClientId != player.OwnerClientId);
 
+            List<string> allFragments = new List<string>();
+
             for (int j = 0; j < otherPlayers.Count; j++)
             {
                 var otherPlayer = otherPlayers[j];
                 var otherPlayerAnswer = otherPlayer.answer.Value.ToString();
+                // anything non-alphanumeric should be surrounded by spaces
+                string pattern = @"([^\w\s])";
+                otherPlayerAnswer = System.Text.RegularExpressions.Regex.Replace(otherPlayerAnswer, pattern, " $1 ");
+                // remove all newlines and extra spaces
+                otherPlayerAnswer = System.Text.RegularExpressions.Regex.Replace(otherPlayerAnswer, @"\s+", " ");
                 // split the answer into fragments
                 var fragments = otherPlayerAnswer.Split(' ');
                 // shuffle the fragments, then take half
@@ -132,9 +141,33 @@ public class JobJobManager : NetworkBehaviour
                     randomFragments[randomIndex] = temp;
                 }
                 var randomFragmentCount = randomFragments.Count / 2;
-                var randomFragment = string.Join(" ", randomFragments.GetRange(0, randomFragmentCount));
-                player.fragments.Value = randomFragment;
+                allFragments.AddRange(randomFragments.GetRange(0, randomFragmentCount));
             }
+
+            // now, if the required fragments are not in the list, add them at random positions (to make it less obvious)
+            for (int j = 0; j < requiredFragments.Length; j++)
+            {
+                if (!allFragments.Contains(requiredFragments[j]))
+                {
+                    var randomIndex = Random.Range(0, allFragments.Count);
+                    allFragments.Insert(randomIndex, requiredFragments[j]);
+                }
+            }
+
+            // set all fragments to lowercase and remove duplicates
+            allFragments = allFragments.ConvertAll(f => f.ToLower());
+            allFragments = allFragments.Distinct().ToList();
+
+            // finally, send the fragments to the player
+            string fragmentsString = string.Join(" ", allFragments);
+            // limit the length of the fragments string to fit into the FixedString512Bytes
+            string truncatedFragments = fragmentsString.Substring(0, Mathf.Min(fragmentsString.Length, 500));
+            if (truncatedFragments.Length < fragmentsString.Length)
+            {
+                Debug.LogWarning("Fragments string was truncated");
+            }
+            truncatedFragments = truncatedFragments.Trim();
+            player.fragments.Value = truncatedFragments;
         }
 
 
