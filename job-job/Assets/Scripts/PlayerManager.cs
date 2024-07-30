@@ -85,4 +85,19 @@ public class PlayerManager : MonoBehaviour
         waitingPanel.SetActive(false);
         fragmentsPanel.SetActive(true);
     }
+
+    public void JJ_DeleteFragment()
+    {
+        // remove last word from fragmentsTMP
+        var fragments = fragmentsTMP.text.TrimEnd().Split(' ');
+        if (fragments.Length > 0)
+        {
+            fragmentsTMP.text = string.Join(" ", fragments, 0, fragments.Length - 1) + " ";
+        }
+    }
+
+    public void JJ_SubmitFragments()
+    {
+
+    }
 }
