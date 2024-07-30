@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Xml.Serialization;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -40,6 +42,8 @@ public class RolesManager : NetworkBehaviour
     private List<NetworkPlayer> players = new List<NetworkPlayer>();
 
     private Dictionary<ulong, RolesResponses> responses = new Dictionary<ulong, RolesResponses>();
+
+    private Dictionary<ulong, bool> botCreated = new Dictionary<ulong, bool>();
 
     private void Awake()
     {
@@ -349,8 +353,59 @@ public class RolesManager : NetworkBehaviour
             chosenResponses.AddRange(defaultOptions);
             player.roleOptions.Value = string.Join(";", chosenResponses);
             player.adjectiveOptions.Value = string.Join(";", chosenAdjectiveResponses);
+
+
+            botCreated.Add(player.OwnerClientId, false);
+
+            // listen for bot creation
+            player.bot.OnValueChanged += (prev, current) =>
+            {
+                OnBotCreated(prev, current, player.OwnerClientId);
+            };
         }
 
+    }
+
+    private void OnBotCreated(FixedString512Bytes prev, FixedString512Bytes current, ulong clientId)
+    {
+        if (currentState != RolesState.BotCreation)
+        {
+            return;
+        }
+
+        Debug.Log("[Roles]: Bot created by " + clientId + ": " + current);
+
+        // remove the event listener
+        var player = players.Find(p => p.OwnerClientId == clientId);
+        if (player == null)
+        {
+            Debug.LogError("Player " + clientId + " not found");
+            return;
+        }
+        player.bot.OnValueChanged -= (prev, current) =>
+        {
+            OnBotCreated(prev, current, clientId);
+        };
+
+        botCreated[clientId] = true;
+
+        CheckReceivedAllBots();
+    }
+
+    private void CheckReceivedAllBots()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        foreach (var player in botCreated)
+        {
+            if (!player.Value)
+                return;
+        }
+
+        Debug.Log("[Roles]: All bots have been created");
     }
 
     // Helper method to shuffle a list

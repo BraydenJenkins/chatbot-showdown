@@ -118,7 +118,7 @@ public class PlayerManager : MonoBehaviour
     [Header("Roles")]
     [SerializeField] private CanvasGroup rolesCanvas;
 
-    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel;
+    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel;
 
     // questions
     [SerializeField] private TMP_Text rolesQuestionText;
@@ -133,6 +133,7 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(rolesCanvas, false);
         SetCanvasGroup(rolesQuestionPanel, false);
         SetCanvasGroup(roleOptionsPanel, false);
+        SetCanvasGroup(rolesWaitingPanel, false);
 
         // ridiculous input field workarounds (jfc unity)
         roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
@@ -206,6 +207,14 @@ public class PlayerManager : MonoBehaviour
         {
             roleOptionsText.text = string.Join(" ", fragments, 0, fragments.Length - 1) + " ";
         }
+    }
+
+    public void Roles_SubmitBot()
+    {
+        networkPlayer.bot.Value = roleOptionsText.text;
+
+        SetCanvasGroup(roleOptionsPanel, false, transitionDuration);
+        SetCanvasGroup(rolesWaitingPanel, true, transitionDuration);
     }
 
     #endregion
