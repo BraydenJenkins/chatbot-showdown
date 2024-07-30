@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71bc934e940bb664185bf01534d8d40e, type: 3}
+  m_Name: JobJobExampleAnswers
+  m_EditorClassIdentifier: 
+  answers:
+  - ' The main character of "Anchorman: The Legend of Ron Burgundy" is Ron Burgundy,
+    a charismatic and egotistical news anchor in 1970s San Diego. His obliviousness
+    and over-the-top antics make for endless comedy as he navigates professional
+    and personal challenges.'
+  - In "The Shining," the main character is Jack Torrance, a struggling writer and
+    recovering alcoholic who takes a job as the winter caretaker of the Overlook
+    Hotel.
+  - "On that worst date, my date was an eccentric who wore a neon bow tie and spent
+    the evening trying to impress me with a collection of useless trivia about 80s
+    pop culture, all while nervously adjusting their vintage monocle and insisting
+    on serenading me with a kazoo rendition of \u201CSweet Caroline.\u201D"

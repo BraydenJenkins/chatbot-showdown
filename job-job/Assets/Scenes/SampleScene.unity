@@ -2362,6 +2362,9 @@ MonoBehaviour:
   - ','
   - .
   - '!'
+  exampleAnswerDatabase: {fileID: 11400000, guid: 4b819ddb9e6c1e44aba1d5e1deeb6bd8,
+    type: 2}
+  minimumFragments: 30
 --- !u!114 &860386381
 MonoBehaviour:
   m_ObjectHideFlags: 0

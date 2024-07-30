@@ -16,6 +16,8 @@ public class JobJobManager : NetworkBehaviour
     private List<NetworkPlayer> players = new List<NetworkPlayer>();
 
     [SerializeField] private string[] requiredFragments;
+    [SerializeField] private AnswerDatabase exampleAnswerDatabase;
+    [SerializeField] private int minimumFragments = 30;
 
     private void Awake()
     {
@@ -133,13 +135,14 @@ public class JobJobManager : NetworkBehaviour
                 // shuffle the fragments, then take half
                 var randomFragments = new List<string>(fragments);
                 // shuffle 
-                for (int k = 0; k < randomFragments.Count; k++)
-                {
-                    var temp = randomFragments[k];
-                    var randomIndex = Random.Range(0, randomFragments.Count);
-                    randomFragments[k] = randomFragments[randomIndex];
-                    randomFragments[randomIndex] = temp;
-                }
+                // for (int k = 0; k < randomFragments.Count; k++)
+                // {
+                //     var temp = randomFragments[k];
+                //     var randomIndex = Random.Range(0, randomFragments.Count);
+                //     randomFragments[k] = randomFragments[randomIndex];
+                //     randomFragments[randomIndex] = temp;
+                // }
+                randomFragments = ShuffleFragmentGroups(randomFragments);
                 var randomFragmentCount = randomFragments.Count / 2;
                 allFragments.AddRange(randomFragments.GetRange(0, randomFragmentCount));
             }
@@ -152,6 +155,35 @@ public class JobJobManager : NetworkBehaviour
                     var randomIndex = Random.Range(0, allFragments.Count);
                     allFragments.Insert(randomIndex, requiredFragments[j]);
                 }
+            }
+
+            // if there aren't enough fragments, add some random ones from the example answer database
+            int trys = 0;
+            int maxTrys = 5;
+            while (allFragments.Count < minimumFragments && trys < maxTrys)
+            {
+                var randomIndex = Random.Range(0, exampleAnswerDatabase.answers.Count);
+                var randomAnswer = exampleAnswerDatabase.answers[randomIndex];
+                string pattern = @"([^\w\s])";
+                randomAnswer = System.Text.RegularExpressions.Regex.Replace(randomAnswer, pattern, " $1 ");
+                // remove all newlines and extra spaces
+                randomAnswer = System.Text.RegularExpressions.Regex.Replace(randomAnswer, @"\s+", " ");
+                var randomFragments = randomAnswer.Split(' ').ToList();
+                // shuffle
+                // for (int k = 0; k < randomFragments.Length; k++)
+                // {
+                //     var temp = randomFragments[k];
+                //     var randomIndex2 = Random.Range(0, randomFragments.Length);
+                //     randomFragments[k] = randomFragments[randomIndex2];
+                //     randomFragments[randomIndex2] = temp;
+                // }
+                randomFragments = ShuffleFragmentGroups(randomFragments);
+                var randomFragmentCount = randomFragments.Count / 2;
+                allFragments.AddRange(randomFragments.Take(randomFragmentCount));
+
+                allFragments = allFragments.Distinct().ToList();
+
+                trys++;
             }
 
             // set all fragments to lowercase and remove duplicates
@@ -171,6 +203,39 @@ public class JobJobManager : NetworkBehaviour
         }
 
 
+    }
+
+    public static List<string> ShuffleFragmentGroups(List<string> fragments, int groupSize = 3)
+    {
+        // Step 1: Split the list into groups of groupSize
+        List<List<string>> groups = new List<List<string>>();
+        for (int i = 0; i < fragments.Count; i += groupSize)
+        {
+            List<string> group = new List<string>();
+            for (int j = 0; j < groupSize && i + j < fragments.Count; j++)
+            {
+                group.Add(fragments[i + j]);
+            }
+            groups.Add(group);
+        }
+
+        // Step 2: Shuffle the groups
+        for (int k = 0; k < groups.Count; k++)
+        {
+            var temp = groups[k];
+            var randomIndex = Random.Range(0, groups.Count);
+            groups[k] = groups[randomIndex];
+            groups[randomIndex] = temp;
+        }
+
+        // Step 3: Recombine the shuffled groups into a single list
+        List<string> shuffledFragments = new List<string>();
+        foreach (var group in groups)
+        {
+            shuffledFragments.AddRange(group);
+        }
+
+        return shuffledFragments;
     }
 
 }
