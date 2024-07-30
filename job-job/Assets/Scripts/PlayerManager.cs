@@ -13,6 +13,8 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private PagingScrollRect avatarSelectionScrollRect;
     [SerializeField] private TMP_Text playerNameText;
 
+    [SerializeField] private float transitionDuration = 0.5f;
+
     public void LinkNetworkPlayer(NetworkPlayer player)
     {
         networkPlayer = player;
@@ -21,6 +23,13 @@ public class PlayerManager : MonoBehaviour
         networkPlayer.playerName.Value = playerNameText.text;
     }
 
+    private void Awake()
+    {
+        JJ_Awake();
+        Roles_Awake();
+    }
+
+    #region Job Job
 
     // job job
     [Header("Job Job")]
@@ -33,7 +42,7 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private Button wordButtonPrefab;
     [SerializeField] private TMP_Text fragmentsTMP;
 
-    private void Awake()
+    private void JJ_Awake()
     {
         jobjobCanvas.alpha = 0;
         jobjobCanvas.interactable = false;
@@ -99,5 +108,113 @@ public class PlayerManager : MonoBehaviour
     public void JJ_SubmitFragments()
     {
 
+    }
+
+    #endregion
+
+    #region ROLES
+
+    // roles
+    [Header("Roles")]
+    [SerializeField] private CanvasGroup rolesCanvas;
+
+    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel;
+
+    // questions
+    [SerializeField] private TMP_Text rolesQuestionText;
+    [SerializeField] private TMP_InputField roleAnswerInputField;
+
+    // bot creation
+    [SerializeField] private RectTransform roleOptionsArea;
+    [SerializeField] private TMP_Text roleOptionsText;
+
+    private void Roles_Awake()
+    {
+        SetCanvasGroup(rolesCanvas, false);
+        SetCanvasGroup(rolesQuestionPanel, false);
+        SetCanvasGroup(roleOptionsPanel, false);
+
+        // ridiculous input field workarounds (jfc unity)
+        roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
+        roleAnswerInputField.onTouchScreenKeyboardStatusChanged.AddListener(Roles_OnTouchScreenKeyboardStatusChanged);
+    }
+
+    public void Roles_SetQuestion(string question)
+    {
+        SetCanvasGroup(rolesCanvas, true, transitionDuration);
+        SetCanvasGroup(rolesQuestionPanel, true, transitionDuration);
+
+        // set question text
+        rolesQuestionText.text = question;
+
+        // clear the input field
+        roleAnswerInputField.text = "";
+    }
+
+    private void Roles_OnTouchScreenKeyboardStatusChanged(TouchScreenKeyboard.Status status)
+    {
+        if (status == TouchScreenKeyboard.Status.Done)
+        {
+            Roles_SubmitAnswer();
+        }
+    }
+    private void Roles_OnEndEdit(string text)
+    {
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetButtonDown("Submit"))
+        {
+            Roles_SubmitAnswer();
+        }
+    }
+
+    public void Roles_SubmitAnswer()
+    {
+        Debug.Log("[PlayerManager]: Submitting role answer: " + roleAnswerInputField.text);
+        networkPlayer.roleAnswer.Value = roleAnswerInputField.text;
+        networkPlayer.adjectiveAnswer.Value = roleAnswerInputField.text;
+
+        roleAnswerInputField.text = "";
+        roleAnswerInputField.ActivateInputField();
+    }
+
+    public void Roles_SetOptions(string options)
+    {
+        var optionsArray = options.Split(';');
+        for (int i = 0; i < optionsArray.Length; i++)
+        {
+            if (string.IsNullOrEmpty(optionsArray[i]))
+            {
+                continue;
+            }
+            var button = Instantiate(wordButtonPrefab, roleOptionsArea);
+            button.GetComponentInChildren<TMP_Text>().text = optionsArray[i];
+            string option = optionsArray[i];
+            button.onClick.AddListener(() =>
+            {
+                roleOptionsText.text += option + " ";
+            });
+        }
+
+        SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
+        SetCanvasGroup(roleOptionsPanel, true, transitionDuration);
+    }
+
+    public void Roles_DeleteFragment()
+    {
+        // remove last word from fragmentsTMP
+        var fragments = roleOptionsText.text.TrimEnd().Split(' ');
+        if (fragments.Length > 0)
+        {
+            roleOptionsText.text = string.Join(" ", fragments, 0, fragments.Length - 1) + " ";
+        }
+    }
+
+    #endregion
+
+
+    private void SetCanvasGroup(CanvasGroup canvasGroup, bool active, float fadeDuration = 0)
+    {
+        canvasGroup.DOFade(active ? 1 : 0, fadeDuration);
+        canvasGroup.interactable = active;
+        canvasGroup.blocksRaycasts = active;
     }
 }

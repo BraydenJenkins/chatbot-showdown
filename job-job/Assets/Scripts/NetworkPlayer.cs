@@ -26,6 +26,15 @@ public class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<FixedString512Bytes> answer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<FixedString512Bytes> fragments = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    // roles
+    public NetworkVariable<FixedString512Bytes> roleQuestion = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString512Bytes> roleAnswer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString512Bytes> adjectiveQuestion = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString512Bytes> adjectiveAnswer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    public NetworkVariable<FixedString512Bytes> roleOptions = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString512Bytes> adjectiveOptions = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
 
 
     private void Start()
@@ -70,6 +79,13 @@ public class NetworkPlayer : NetworkBehaviour
         answer.OnValueChanged += OnAnswerChanged;
         fragments.OnValueChanged += OnFragmentsChanged;
 
+        // roles
+        roleQuestion.OnValueChanged += OnRoleQuestionChanged;
+        adjectiveQuestion.OnValueChanged += OnRoleQuestionChanged;
+
+        roleOptions.OnValueChanged += OnRoleOptionsChanged;
+        adjectiveOptions.OnValueChanged += OnAdjectiveOptionsChanged;
+
     }
 
     #region Job Job
@@ -100,6 +116,36 @@ public class NetworkPlayer : NetworkBehaviour
 
     #endregion
 
+
+    #region Roles
+
+    private void OnRoleQuestionChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("Role question changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetQuestion(current.ToString());
+        }
+    }
+
+    private void OnRoleOptionsChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("Role options changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetOptions(current.ToString());
+        }
+    }
+    private void OnAdjectiveOptionsChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("Adjective options changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetOptions(current.ToString());
+        }
+    }
+
+    #endregion
 
     #region Avatars and Customization
     public void SetAvatar(int index)
