@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
+using ConversationAPI;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -118,7 +119,7 @@ public class PlayerManager : MonoBehaviour
     [Header("Roles")]
     [SerializeField] private CanvasGroup rolesCanvas;
 
-    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel;
+    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel, conversationPanel;
 
     // questions
     [SerializeField] private TMP_Text rolesQuestionText;
@@ -130,6 +131,7 @@ public class PlayerManager : MonoBehaviour
 
     // activity
     [SerializeField] private GameObject baristaActivity;
+    [SerializeField] private ConversationCanvas conversationCanvas;
 
     private void Roles_Awake()
     {
@@ -137,6 +139,7 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(rolesQuestionPanel, false);
         SetCanvasGroup(roleOptionsPanel, false);
         SetCanvasGroup(rolesWaitingPanel, false);
+        SetCanvasGroup(conversationPanel, false);
 
         // ridiculous input field workarounds (jfc unity)
         roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
@@ -226,6 +229,15 @@ public class PlayerManager : MonoBehaviour
 
         SetCanvasGroup(rolesWaitingPanel, false, transitionDuration);
         baristaActivity.SetActive(true);
+    }
+
+    public void Roles_SetConversation(Conversation conversation)
+    {
+        SetCanvasGroup(conversationPanel, true, transitionDuration);
+
+        conversationCanvas.SetConversation(conversation);
+
+
     }
 
     #endregion

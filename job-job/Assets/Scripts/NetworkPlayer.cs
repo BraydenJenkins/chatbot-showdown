@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using ConversationAPI;
 using TMPro;
 using Unity.Collections;
 using Unity.Netcode;
@@ -40,6 +41,8 @@ public class NetworkPlayer : NetworkBehaviour
 
     public NetworkVariable<int> activityIndex = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> myTurn = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<FixedString4096Bytes> currentConversation = new NetworkVariable<FixedString4096Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
 
 
@@ -94,6 +97,8 @@ public class NetworkPlayer : NetworkBehaviour
 
         activityIndex.OnValueChanged += OnActivityChanged;
         myTurn.OnValueChanged += OnMyTurnChanged;
+
+        currentConversation.OnValueChanged += OnCurrentConversationChanged;
 
     }
 
@@ -169,6 +174,17 @@ public class NetworkPlayer : NetworkBehaviour
         if (IsLocalPlayer)
         {
 
+        }
+    }
+
+    private void OnCurrentConversationChanged(FixedString4096Bytes previous, FixedString4096Bytes current)
+    {
+        Debug.Log("Current conversation changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            // get conversation from json
+            Conversation conversation = JsonUtility.FromJson<Conversation>(current.ToString());
+            playerManager.Roles_SetConversation(conversation);
         }
     }
 

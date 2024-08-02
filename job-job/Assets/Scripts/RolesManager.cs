@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Unity.Collections;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -46,6 +48,11 @@ public class RolesManager : NetworkBehaviour
     private Dictionary<ulong, bool> botCreated = new Dictionary<ulong, bool>();
 
     [SerializeField] private RolesActivity[] activities;
+
+    private ThinkerModule thinkerModule;
+
+    public bool fakeThinkerModule = false;
+
 
     private void Awake()
     {
@@ -429,10 +436,149 @@ public class RolesManager : NetworkBehaviour
         // start the activity
 
         var activity = activities[activityIndex];
+        StartCoroutine(RunActivity(activity));
 
-        players[0].myTurn.Value = true;
-        players[0].SetTargetPositionRpc(activity.navTarget.position);
+    }
 
+    public void Debug_RunActivity(int index)
+    {
+        var activity = activities[index];
+
+        if (IsServer)
+        {
+            players.Clear();
+            var clients = NetworkManager.Singleton.ConnectedClientsList;
+            foreach (var client in clients)
+            {
+                var player = client.PlayerObject.GetComponent<NetworkPlayer>();
+                players.Add(player);
+            }
+
+            int activityIndex = index;
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+
+                player.activityIndex.Value = activityIndex;
+            }
+        }
+
+        Debug.Log("[Roles]: DEBUG - Running activity " + index);
+
+        StartCoroutine(RunActivity(activity));
+    }
+
+    private IEnumerator RunActivity(RolesActivity activity)
+    {
+
+        // NOTE: the below is to allow for activity testing when not in a networked environment
+        string botPrompt = "";
+        if (IsServer)
+        {
+            players[0].myTurn.Value = true;
+            players[0].SetTargetPositionRpc(activity.navTarget.position);
+
+            // use bot prompt to get the first conversation from gemini
+            botPrompt = players[0].bot.Value.ToString();
+        }
+
+        if (thinkerModule == null)
+        {
+            thinkerModule = new ThinkerModule();
+        }
+
+        var task = GetConversation(botPrompt);
+
+        yield return new WaitUntil(() => task.IsCompleted);
+
+        if (!task.IsCompletedSuccessfully)
+        {
+            Debug.LogError("Failed to get conversation: " + task.Exception);
+            yield break;
+        }
+
+        ConversationAPI.Conversation conversation = task.Result;
+
+        string conversationString = "";
+        foreach (var message in conversation.messages)
+        {
+            conversationString += message.role + ": " + message.content + "\n";
+        }
+
+        Debug.Log("[Roles]: Conversation: " + conversationString);
+
+        // send the conversation to all players
+        for (int i = 0; i < players.Count; i++)
+        {
+            NetworkPlayer player = players[i];
+            string conversationJSON = JsonUtility.ToJson(conversation);
+            player.currentConversation.Value = conversationJSON;
+        }
+
+    }
+
+
+    // TODO: make the return type something more useful (like a conversation object)
+    private async Task<ConversationAPI.Conversation> GetConversation(string chatbotSystemPrompt)
+    {
+
+        // DEBUG: 
+        // chatbotSystemPrompt = "You are an edge lord who never showers and winks all the time";
+
+        string systemPrompt = "bot system prompt: You are a chatbot whose goal is to engage in amusing and entertaining conversations. Your primary objective in this activity is to flirt with a barista in a clever and funny way to get a free coffee. The user has defined this about you: ";
+        systemPrompt += chatbotSystemPrompt;
+        string agentPersonality = "agent system prompt: You are a friendly and professional barista working at a popular coffee shop. You enjoy engaging in light-hearted conversations with customers but maintain a professional demeanor.";
+        string content = "Goal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging. Begin the conversation with the barista greeting the chatbot. Aim to make the conversation between 4 to 6 messages long.";
+        string outputFormat = "The output must be JSON that describes an array of messages. Each message has a role, content, and animation. Use the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"agent\\\", \\\"content\\\": \\\"<agent's message>\\\", \\\"animation\\\": \\\"<agent's animation>\\\"}, {\\\"role\\\": \\\"bot\\\", \\\"content\\\": \\\"<bot's message>\\\", \\\"animation\\\": \\\"<bot's animation>\\\"}]}\nEnsure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message. Begin your message with \\\"{\\\"messages\\\": [\\\" to start the JSON object and end with \\\"]}\\\" to close the JSON object. You do not need to include the word json in your response. You MUST output a valid JSON string (NOT AN OBJECT).";
+
+        string prompt = $"{systemPrompt}\n\n{agentPersonality}\n\n{content}\n\n{outputFormat}";
+
+        // prompt = "bot system prompt: You are a chatbot whose goal is to engage in amusing and entertaining conversations. Your primary objective in this activity is to flirt with a barista in a clever and funny way to get a free coffee. The user has defined this about you: You are an edge lord who never showers and winks all the time\n\nagent system prompt: You are a friendly and professional barista working at a popular coffee shop. You enjoy engaging in light-hearted conversations with customers but maintain a professional demeanor.\n\nGoal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging.\n\nThe output must be a JSON object with the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"agent\\\", \\\"content\\\": \\\"<agent's message>\\\", \\\"animation\\\": \\\"<agent's animation>\\\"}, {\\\"role\\\": \\\"bot\\\", \\\"content\\\": \\\"<bot's message>\\\", \\\"animation\\\": \\\"<bot's animation>\\\"}]} Ensure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message.";
+
+        // prompt = "give me a couplet about minions from despicable me\nmake it good!";
+
+        Debug.Log(prompt);
+
+        Task<string> task;
+        if (!fakeThinkerModule)
+        {
+            task = thinkerModule.GetCompletion(prompt);
+        }
+        else
+        {
+            // string exampleConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi!\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"Hello there!\",\"animation\":\"wave\"}]}";
+            string exampleConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi!\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"Hello there!\",\"animation\":\"wave\"},{\"role\":\"agent\",\"content\":\"How can I assist you today?\",\"animation\":\"question\"},{\"role\":\"bot\",\"content\":\"I need help with my account.\",\"animation\":\"thinking\"},{\"role\":\"agent\",\"content\":\"Sure, I can help with that. What seems to be the issue?\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"I forgot my password.\",\"animation\":\"sad\"}]}";
+
+
+            task = Task.FromResult(exampleConversation);
+        }
+
+        await task;
+
+        if (task.IsCompletedSuccessfully)
+        {
+            string result = task.Result;
+            Debug.Log("Generated content: " + result);
+
+            // try to parse the JSON response
+            try
+            {
+                ConversationAPI.Conversation conversation = JsonUtility.FromJson<ConversationAPI.Conversation>(result);
+                return conversation;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Failed to parse JSON response: " + e.Message);
+                return null;
+            }
+
+        }
+        else
+        {
+            Debug.LogError("Failed to get completion: " + task.Exception);
+            return null;
+        }
 
     }
 
@@ -463,4 +609,21 @@ public class RolesResponses
         adjectiveResponses = new List<string>();
     }
 
+}
+
+namespace ConversationAPI
+{
+    [Serializable]
+    public class Message
+    {
+        public string role;
+        public string content;
+        public string animation;
+    }
+
+    [Serializable]
+    public class Conversation
+    {
+        public Message[] messages;
+    }
 }
