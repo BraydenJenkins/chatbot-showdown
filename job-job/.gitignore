@@ -62,3 +62,6 @@ crashlytics-build.properties
 Assets/Scripts/Editor/HuddleUserSettings.asset
 
 Assets/Scripts/Editor/HuddleUserSettings.asset.meta
+
+Assets/Resources/geminiApiKey.asset
+Assets/Resources/geminiApiKey.asset.meta
