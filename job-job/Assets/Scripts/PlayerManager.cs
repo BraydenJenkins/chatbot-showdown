@@ -125,7 +125,8 @@ public class PlayerManager : MonoBehaviour
     [Header("Roles")]
     [SerializeField] private CanvasGroup rolesCanvas;
 
-    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel, conversationPanel, questionIntroPanel;
+    [SerializeField] private CanvasGroup rolesBackground;
+    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel, conversationPanel, questionIntroPanel, promptIntroPanel;
 
     // questions
     [SerializeField] private float questionIntroDelay = 2f;
@@ -152,8 +153,10 @@ public class PlayerManager : MonoBehaviour
     private void Roles_Awake()
     {
         SetCanvasGroup(rolesCanvas, false);
+        SetCanvasGroup(rolesBackground, true);
         SetCanvasGroup(rolesQuestionPanel, false);
         SetCanvasGroup(questionIntroPanel, false);
+        SetCanvasGroup(promptIntroPanel, false);
         SetCanvasGroup(roleOptionsPanel, false);
         SetCanvasGroup(rolesWaitingPanel, false);
         SetCanvasGroup(conversationPanel, false);
@@ -262,8 +265,11 @@ public class PlayerManager : MonoBehaviour
         // so timer should be completely full at timerStart + duration * 1000
         // and empty at timerStart
         this.timerStart = timerStart + (long)(questionIntroDelay * 1000) + (long)(transitionDuration * 1000);
-        timerEnd = timerStart + (duration * 1000) + (long)(transitionDuration * 1000);
+        timerEnd = timerStart + (duration * 1000) - (long)(questionIntroDelay * 1000);
         currentTimerTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
+        // what I am realizing now is, if there is latency, the player's timer visual won't start at the beginning of the bar, which might be confusing and or frustrating
+        // so all we really care about it the end time, and we just set the timer start time to the current time
+        this.timerStart = currentTimerTime + (long)(questionIntroDelay * 1000) + (long)(transitionDuration * 1000 * 0.5f);
         timerRunning = true;
     }
 
@@ -324,6 +330,15 @@ public class PlayerManager : MonoBehaviour
         }
 
         SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
+        SetCanvasGroup(promptIntroPanel, true, transitionDuration);
+        // SetCanvasGroup(roleOptionsPanel, true, transitionDuration);
+        StartCoroutine(ShowRoleOptionsAfterDelay(questionIntroDelay));
+    }
+
+    private IEnumerator ShowRoleOptionsAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        SetCanvasGroup(promptIntroPanel, false, transitionDuration);
         SetCanvasGroup(roleOptionsPanel, true, transitionDuration);
     }
 
@@ -352,6 +367,10 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(rolesWaitingPanel, false, transitionDuration);
         Debug.Log("Setting activity: " + index);
         baristaActivity.SetActive(true);
+
+        // TODO: decide how to handle the background / ar and when to toggle
+        // right now, I'm building for AR first, so when the activity is set, we'll just toggle the background off
+        SetCanvasGroup(rolesBackground, false, transitionDuration);
     }
 
     public void Roles_SetConversation(Conversation conversation)
