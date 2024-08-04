@@ -64,13 +64,46 @@ public class ConversationCanvas : MonoBehaviour
 
     private Coroutine animationRoutine;
 
-    public void AdvanceConversation()
+    public void SetConversationIndex(int newIndex)
     {
-        if (currentMessageIndex >= messageLengths.Count)
+        if (newIndex < 0 || newIndex > messageLengths.Count)
         {
             return;
         }
 
+        if (newIndex == currentMessageIndex + 1)
+        {
+            // expected behavior, we are attempting to advance the conversation by one message
+            AdvanceConversation();
+        }
+        else if (newIndex > currentMessageIndex + 1)
+        {
+            // looks like we are trying to skip ahead in the conversation
+            // so just show the full message up to that point.
+            int endLength = 0;
+            for (int i = 0; i <= newIndex; i++)
+            {
+                endLength += messageLengths[i];
+            }
+            conversationText.maxVisibleCharacters = endLength;
+            currentMessageIndex = newIndex;
+        }
+        else
+        {
+            // we are trying to go back in the conversation
+            // so just show the full message up to that point.
+            int endLength = 0;
+            for (int i = 0; i <= newIndex; i++)
+            {
+                endLength += messageLengths[i];
+            }
+            conversationText.maxVisibleCharacters = endLength;
+            currentMessageIndex = newIndex;
+        }
+    }
+
+    public void AdvanceConversation()
+    {
         // conversationText.maxVisibleCharacters += messageLengths[currentMessageIndex];
         if (animationRoutine != null)
         {

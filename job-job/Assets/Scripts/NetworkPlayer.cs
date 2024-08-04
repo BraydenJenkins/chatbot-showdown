@@ -44,6 +44,9 @@ public class NetworkPlayer : NetworkBehaviour
 
     public NetworkVariable<FixedString4096Bytes> currentConversation = new NetworkVariable<FixedString4096Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    public NetworkVariable<int> currentConversationIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private RolesManager rolesManager;
 
 
     private void Start()
@@ -100,6 +103,21 @@ public class NetworkPlayer : NetworkBehaviour
 
         currentConversation.OnValueChanged += OnCurrentConversationChanged;
 
+        currentConversationIndex.OnValueChanged += OnConversationIndexChanged;
+
+        // try to find the roles manager 
+        // in a better set up, the roles manager wouldn't be spawned until that game is selected
+        // but for now, we'll just keep it in the scene so it is always available
+        rolesManager = FindObjectOfType<RolesManager>();
+        if (rolesManager != null)
+        {
+            rolesManager.timerStart.OnValueChanged += OnTimerChanged;
+        }
+        else
+        {
+            Debug.LogWarning("RolesManager not found, timer will not be updated");
+        }
+
     }
 
     #region Job Job
@@ -132,6 +150,16 @@ public class NetworkPlayer : NetworkBehaviour
 
 
     #region Roles
+
+    private void OnTimerChanged(long previous, long current)
+    {
+        Debug.Log("Timer changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            int timerDuration = rolesManager.GetTimerDuration();
+            playerManager.Roles_SetTimer(current, timerDuration);
+        }
+    }
 
     private void OnRoleQuestionChanged(FixedString512Bytes previous, FixedString512Bytes current)
     {
@@ -173,7 +201,7 @@ public class NetworkPlayer : NetworkBehaviour
         Debug.Log("My turn changed from " + previous + " to " + current);
         if (IsLocalPlayer)
         {
-
+            playerManager.Roles_SetMyTurn(current);
         }
     }
 
@@ -186,6 +214,24 @@ public class NetworkPlayer : NetworkBehaviour
             Conversation conversation = JsonUtility.FromJson<Conversation>(current.ToString());
             playerManager.Roles_SetConversation(conversation);
         }
+    }
+
+    private void OnConversationIndexChanged(int previous, int current)
+    {
+        Debug.Log("Conversation index changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+
+            playerManager.Roles_SetConversationIndex(current);
+        }
+    }
+
+    public void AdvanceConversationOnServer()
+    {
+        if (rolesManager == null)
+            rolesManager = FindObjectOfType<RolesManager>();
+
+        rolesManager.AdvanceConversationRpc(OwnerClientId);
     }
 
     #endregion
@@ -241,6 +287,5 @@ public class NetworkPlayer : NetworkBehaviour
 
         targetPosition.Value = position;
     }
-
 
 }

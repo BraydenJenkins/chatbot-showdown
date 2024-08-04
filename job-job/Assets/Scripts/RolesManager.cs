@@ -25,6 +25,7 @@ public class RolesManager : NetworkBehaviour
 
     // using a network variable to keep track of the timer start for clients
     [SerializeField] private int timerDuration = 30;
+    public int GetTimerDuration() { return timerDuration; }
     public NetworkVariable<long> timerStart = new NetworkVariable<long>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // but using a local variable to calculate the time elapsed
@@ -52,6 +53,8 @@ public class RolesManager : NetworkBehaviour
     private ThinkerModule thinkerModule;
 
     public bool fakeThinkerModule = false;
+
+    private int currentMessageIndex = 0;
 
 
     private void Awake()
@@ -514,6 +517,67 @@ public class RolesManager : NetworkBehaviour
             NetworkPlayer player = players[i];
             string conversationJSON = JsonUtility.ToJson(conversation);
             player.currentConversation.Value = conversationJSON;
+        }
+
+        // now, whoever's turn it is needs to be able to control the conversation
+        // lets have a server network variable that keeps track of how far into the conversation we are
+        // that the player can control
+
+        if (IsServer)
+        {
+            currentMessageIndex = 0;
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+                player.currentConversationIndex.Value = currentMessageIndex;
+            }
+        }
+
+        // all players should now have the conversation and be ready to listen for changes to the conversation index
+        // so we need to give the current player control of the conversation
+
+    }
+
+    [Rpc(SendTo.Server)]
+    public void AdvanceConversationRpc(ulong SenderClientId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        // get the current player
+        NetworkPlayer currentPlayer = null;
+        foreach (var player in players)
+        {
+            if (player.myTurn.Value)
+            {
+                currentPlayer = player;
+                break;
+            }
+        }
+
+        if (currentPlayer == null)
+        {
+            Debug.LogError("No player has their turn");
+            return;
+        }
+
+        // check if the current player is the one who called this method
+        if (currentPlayer.OwnerClientId != SenderClientId)
+        {
+            Debug.LogError("Player " + SenderClientId + " is not the current player");
+            return;
+        }
+
+        // if here, the current player is the one who called this method
+        // so we need to advance the conversation
+        currentMessageIndex++;
+        for (int i = 0; i < players.Count; i++)
+        {
+            NetworkPlayer player = players[i];
+            player.currentConversationIndex.Value = currentMessageIndex;
         }
 
     }

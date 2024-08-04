@@ -5,6 +5,7 @@ using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
 using ConversationAPI;
+using System;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -28,6 +29,11 @@ public class PlayerManager : MonoBehaviour
     {
         JJ_Awake();
         Roles_Awake();
+    }
+
+    private void Update()
+    {
+        Roles_Update();
     }
 
     #region Job Job
@@ -119,11 +125,19 @@ public class PlayerManager : MonoBehaviour
     [Header("Roles")]
     [SerializeField] private CanvasGroup rolesCanvas;
 
-    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel, conversationPanel;
+    [SerializeField] private CanvasGroup rolesQuestionPanel, roleOptionsPanel, rolesWaitingPanel, conversationPanel, questionIntroPanel;
 
     // questions
+    [SerializeField] private float questionIntroDelay = 2f;
     [SerializeField] private TMP_Text rolesQuestionText;
     [SerializeField] private TMP_InputField roleAnswerInputField;
+    int questionsAnswered = 0;
+    [SerializeField] private TMP_Text questionIntroText;
+    [SerializeField] private Image questionTimer;
+    private bool timerRunning = false;
+    private long timerStart;
+    private long timerEnd;
+    private long currentTimerTime;
 
     // bot creation
     [SerializeField] private RectTransform roleOptionsArea;
@@ -132,23 +146,131 @@ public class PlayerManager : MonoBehaviour
     // activity
     [SerializeField] private GameObject baristaActivity;
     [SerializeField] private ConversationCanvas conversationCanvas;
+    [SerializeField] private Button nextLineButton;
+    private bool myTurn = false;
 
     private void Roles_Awake()
     {
         SetCanvasGroup(rolesCanvas, false);
         SetCanvasGroup(rolesQuestionPanel, false);
+        SetCanvasGroup(questionIntroPanel, false);
         SetCanvasGroup(roleOptionsPanel, false);
         SetCanvasGroup(rolesWaitingPanel, false);
         SetCanvasGroup(conversationPanel, false);
+        nextLineButton.gameObject.SetActive(false);
+
+        questionsAnswered = 0;
+
+
 
         // ridiculous input field workarounds (jfc unity)
         roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
         roleAnswerInputField.onTouchScreenKeyboardStatusChanged.AddListener(Roles_OnTouchScreenKeyboardStatusChanged);
     }
 
+    private void Roles_Update()
+    {
+        if (timerRunning)
+        {
+            currentTimerTime += (long)(Time.deltaTime * 1000);
+            Debug.Log("Timer: " + (float)(currentTimerTime - timerStart) + " / " + (float)(timerEnd - timerStart));
+            questionTimer.fillAmount = (float)(currentTimerTime - timerStart) / (float)(timerEnd - timerStart);
+            if (currentTimerTime >= timerEnd)
+            {
+                questionTimer.fillAmount = 1;
+                timerRunning = false;
+            }
+        }
+    }
+
     public void Roles_SetQuestion(string question)
     {
+        questionsAnswered++;
+        string questionIntro = GetOrdinal(questionsAnswered) + " question";
+        questionIntro = questionIntro.ToUpper();
+        questionIntroText.text = questionIntro;
+
         SetCanvasGroup(rolesCanvas, true, transitionDuration);
+        SetCanvasGroup(questionIntroPanel, true, transitionDuration);
+        SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
+
+
+        StartCoroutine(Roles_ShowQuestionAfterDelay(question, questionIntroDelay));
+    }
+
+    private string GetOrdinal(int num)
+    {
+        // wait I am dumb, the mockup just shows "first question", then "next question" for the rest
+        // so we don't need to do this ordinal stuff
+        // but I'll leave it here just in case we need it later
+
+        if (num == 1) return "first";
+        return "next";
+
+
+        if (num <= 0) return num.ToString();
+
+        // hardcoding the first few (probably enough for our purposes)
+        // the rest will just be "th" or whatever (so like 11th, 12th, 13th, 14th, etc.)
+        if (num == 1)
+        {
+            return "first";
+        }
+        if (num == 2)
+        {
+            return "second";
+        }
+        if (num == 3)
+        {
+            return "third";
+        }
+        if (num == 4)
+        {
+            return "fourth";
+        }
+        if (num == 5)
+        {
+            return "fifth";
+        }
+
+
+        switch (num % 100)
+        {
+            case 11:
+            case 12:
+            case 13:
+                return num + "th";
+        }
+
+        switch (num % 10)
+        {
+            case 1:
+                return num + "st";
+            case 2:
+                return num + "nd";
+            case 3:
+                return num + "rd";
+            default:
+                return num + "th";
+        }
+    }
+
+    public void Roles_SetTimer(long timerStart, int duration)
+    {
+        // timerStart is unix timestamp in milliseconds
+        // duration is in seconds
+        // so timer should be completely full at timerStart + duration * 1000
+        // and empty at timerStart
+        this.timerStart = timerStart + (long)(questionIntroDelay * 1000) + (long)(transitionDuration * 1000);
+        timerEnd = timerStart + (duration * 1000) + (long)(transitionDuration * 1000);
+        currentTimerTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
+        timerRunning = true;
+    }
+
+    private IEnumerator Roles_ShowQuestionAfterDelay(string question, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        SetCanvasGroup(questionIntroPanel, false, transitionDuration);
         SetCanvasGroup(rolesQuestionPanel, true, transitionDuration);
 
         // set question text
@@ -217,10 +339,10 @@ public class PlayerManager : MonoBehaviour
 
     public void Roles_SubmitBot()
     {
-        networkPlayer.bot.Value = roleOptionsText.text;
-
         SetCanvasGroup(roleOptionsPanel, false, transitionDuration);
         SetCanvasGroup(rolesWaitingPanel, true, transitionDuration);
+
+        networkPlayer.bot.Value = roleOptionsText.text;
     }
 
     public void Roles_SetActivity(int index)
@@ -228,6 +350,7 @@ public class PlayerManager : MonoBehaviour
         // TODO: support multiple activities
 
         SetCanvasGroup(rolesWaitingPanel, false, transitionDuration);
+        Debug.Log("Setting activity: " + index);
         baristaActivity.SetActive(true);
     }
 
@@ -236,8 +359,26 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(conversationPanel, true, transitionDuration);
 
         conversationCanvas.SetConversation(conversation);
+    }
 
+    public void Roles_SetConversationIndex(int index)
+    {
+        conversationCanvas.SetConversationIndex(index);
+    }
 
+    public void Roles_SetMyTurn(bool turn)
+    {
+        myTurn = turn;
+
+        nextLineButton.gameObject.SetActive(turn);
+    }
+
+    public void Roles_AdvanceConversation()
+    {
+        if (myTurn)
+        {
+            networkPlayer.AdvanceConversationOnServer();
+        }
     }
 
     #endregion
@@ -245,6 +386,7 @@ public class PlayerManager : MonoBehaviour
 
     private void SetCanvasGroup(CanvasGroup canvasGroup, bool active, float fadeDuration = 0)
     {
+        Debug.Log("Setting canvas group: " + canvasGroup.name + " to " + active);
         canvasGroup.DOFade(active ? 1 : 0, fadeDuration);
         canvasGroup.interactable = active;
         canvasGroup.blocksRaycasts = active;
