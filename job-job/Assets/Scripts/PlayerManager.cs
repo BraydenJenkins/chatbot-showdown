@@ -143,9 +143,18 @@ public class PlayerManager : MonoBehaviour
     // bot creation
     [SerializeField] private RectTransform roleOptionsArea;
     [SerializeField] private TMP_Text roleOptionsText;
+    [SerializeField] private TMP_Text roleOptionsActivityText;
+
+    [SerializeField] private int expectedOptionsReceived = 2;
+    private int optionsReceived = 0;
+    private bool activityReceived = false;
 
     // activity
-    [SerializeField] private GameObject baristaActivity;
+    [SerializeField] private CanvasGroup activityIntroCanvas, activityGoalCanvas;
+    [SerializeField] private TMP_Text activityText;
+    [SerializeField] private ActivityDatabase activityDatabase;
+    [SerializeField] private GameObject activityParent;
+    private RolesActivity currentActivity;
     [SerializeField] private ConversationCanvas conversationCanvas;
     [SerializeField] private Button nextLineButton;
     private bool myTurn = false;
@@ -160,6 +169,9 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(roleOptionsPanel, false);
         SetCanvasGroup(rolesWaitingPanel, false);
         SetCanvasGroup(conversationPanel, false);
+        SetCanvasGroup(activityIntroCanvas, false);
+        SetCanvasGroup(activityGoalCanvas, false);
+
         nextLineButton.gameObject.SetActive(false);
 
         questionsAnswered = 0;
@@ -176,7 +188,7 @@ public class PlayerManager : MonoBehaviour
         if (timerRunning)
         {
             currentTimerTime += (long)(Time.deltaTime * 1000);
-            Debug.Log("Timer: " + (float)(currentTimerTime - timerStart) + " / " + (float)(timerEnd - timerStart));
+            // Debug.Log("Timer: " + (float)(currentTimerTime - timerStart) + " / " + (float)(timerEnd - timerStart));
             questionTimer.fillAmount = (float)(currentTimerTime - timerStart) / (float)(timerEnd - timerStart);
             if (currentTimerTime >= timerEnd)
             {
@@ -329,10 +341,39 @@ public class PlayerManager : MonoBehaviour
             });
         }
 
-        SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
-        SetCanvasGroup(promptIntroPanel, true, transitionDuration);
-        // SetCanvasGroup(roleOptionsPanel, true, transitionDuration);
-        StartCoroutine(ShowRoleOptionsAfterDelay(questionIntroDelay));
+        // SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
+        // SetCanvasGroup(promptIntroPanel, true, transitionDuration);
+        // // SetCanvasGroup(roleOptionsPanel, true, transitionDuration);
+        // StartCoroutine(ShowRoleOptionsAfterDelay(questionIntroDelay));
+
+        optionsReceived++;
+
+        Roles_CheckOptionsAndActivitySet();
+    }
+
+    public void Roles_SetActivity(int index)
+    {
+        activityReceived = true;
+
+        var activity = activityDatabase.activities[index];
+
+        roleOptionsActivityText.text = activity.activityDescription;
+        activityText.text = activity.activityDescription;
+
+        // instantiate the activity onto the game object
+        currentActivity = Instantiate(activity, activityParent.transform);
+
+        Roles_CheckOptionsAndActivitySet();
+    }
+
+    private void Roles_CheckOptionsAndActivitySet()
+    {
+        if (optionsReceived >= expectedOptionsReceived && activityReceived)
+        {
+            SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
+            SetCanvasGroup(promptIntroPanel, true, transitionDuration);
+            StartCoroutine(ShowRoleOptionsAfterDelay(questionIntroDelay));
+        }
     }
 
     private IEnumerator ShowRoleOptionsAfterDelay(float delay)
@@ -360,13 +401,29 @@ public class PlayerManager : MonoBehaviour
         networkPlayer.bot.Value = roleOptionsText.text;
     }
 
-    public void Roles_SetActivity(int index)
+    public void Roles_StartActivity()
     {
         // TODO: support multiple activities
 
         SetCanvasGroup(rolesWaitingPanel, false, transitionDuration);
-        Debug.Log("Setting activity: " + index);
-        baristaActivity.SetActive(true);
+        Debug.Log("Starting activity: ");
+        // baristaActivity.SetActive(true);
+
+        StartCoroutine(Roles_ShowActivityFlow());
+
+
+    }
+
+    private IEnumerator Roles_ShowActivityFlow()
+    {
+        SetCanvasGroup(activityIntroCanvas, true, transitionDuration);
+        yield return new WaitForSeconds(questionIntroDelay);
+        SetCanvasGroup(activityIntroCanvas, false, transitionDuration);
+        SetCanvasGroup(activityGoalCanvas, true, transitionDuration);
+        yield return new WaitForSeconds(questionIntroDelay);
+        SetCanvasGroup(activityGoalCanvas, false, transitionDuration);
+
+        SetCanvasGroup(conversationPanel, true, transitionDuration);
 
         // TODO: decide how to handle the background / ar and when to toggle
         // right now, I'm building for AR first, so when the activity is set, we'll just toggle the background off
@@ -375,7 +432,7 @@ public class PlayerManager : MonoBehaviour
 
     public void Roles_SetConversation(Conversation conversation)
     {
-        SetCanvasGroup(conversationPanel, true, transitionDuration);
+        // SetCanvasGroup(conversationPanel, true, transitionDuration);
 
         conversationCanvas.SetConversation(conversation);
     }

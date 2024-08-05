@@ -41,6 +41,9 @@ public class NetworkPlayer : NetworkBehaviour
 
     public NetworkVariable<int> activityIndex = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> myTurn = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    // we used to use activityIndex to start the activity, but now we just use it to set the activity
+    // so maybe we use something like turn order to start the activity instead
+    private bool activityStarted = false;
 
     public NetworkVariable<FixedString4096Bytes> currentConversation = new NetworkVariable<FixedString4096Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
@@ -112,6 +115,8 @@ public class NetworkPlayer : NetworkBehaviour
         if (rolesManager != null)
         {
             rolesManager.timerStart.OnValueChanged += OnTimerChanged;
+
+            rolesManager.playerTurnOrder.OnValueChanged += OnTurnOrderChanged;
         }
         else
         {
@@ -192,7 +197,29 @@ public class NetworkPlayer : NetworkBehaviour
         Debug.Log("Activity changed from " + previous + " to " + current);
         if (IsLocalPlayer)
         {
+            // playerManager.Roles_StartActivity(current);
             playerManager.Roles_SetActivity(current);
+        }
+    }
+
+    private void OnTurnOrderChanged(FixedString512Bytes prev, FixedString512Bytes current)
+    {
+        Debug.Log("Turn order changed: " + current);
+
+        // turn order is changed when the activity starts
+        // TODO: we could either alter turn order each turn so index 0 is always current player
+        // or we could just keep track of the current player index so we don't have to network the whole list each time
+        // probably the latter
+        // huh, but what if a player leaves? we'd have to update the whole list anyway...
+        // actually, we could just skip that player's turn using the index...
+
+        // screw it, let's just do the whole list.
+        // then we can't say turn order changes exclusively when the activity starts
+        // so we will start the activity when turn order changes if the activity is not started
+        if (IsLocalPlayer && !activityStarted)
+        {
+            playerManager.Roles_StartActivity();
+            activityStarted = true;
         }
     }
 

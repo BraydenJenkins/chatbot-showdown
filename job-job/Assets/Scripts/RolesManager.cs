@@ -48,13 +48,21 @@ public class RolesManager : NetworkBehaviour
 
     private Dictionary<ulong, bool> botCreated = new Dictionary<ulong, bool>();
 
-    [SerializeField] private RolesActivity[] activities;
+    [SerializeField] private ActivityDatabase activityDatabase;
 
     private ThinkerModule thinkerModule;
 
     public bool fakeThinkerModule = false;
 
     private int currentMessageIndex = 0;
+
+    private int activityIndex = 0;
+
+    // networklist has bugs and is prone to memory leaks
+    // should switch to one in the future, but for a quick and dirty solution, we will use a netvar
+    // TODO: implement a proper networklist
+    // public NetworkList<ulong> playerTurnOrder;
+    public NetworkVariable<FixedString512Bytes> playerTurnOrder = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
 
     private void Awake()
@@ -150,6 +158,35 @@ public class RolesManager : NetworkBehaviour
                             break;
                     }
                 }
+            }
+        }
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        playerTurnOrder.Dispose();
+
+        if (IsServer)
+        {
+
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+                player.roleAnswer.OnValueChanged -= (prev, current) =>
+                {
+                    OnRoleAnswerReceived(prev, current, player.OwnerClientId);
+                };
+                player.adjectiveAnswer.OnValueChanged -= (prev, current) =>
+                {
+                    OnAdjectiveAnswerReceived(prev, current, player.OwnerClientId);
+                };
+                player.bot.OnValueChanged -= (prev, current) =>
+                {
+                    OnBotCreated(prev, current, player.OwnerClientId);
+                };
             }
         }
     }
@@ -265,6 +302,9 @@ public class RolesManager : NetworkBehaviour
 
         currentState = RolesState.BotCreation;
 
+        // before sending out the responses, we need to decide on the activity
+        activityIndex = Random.Range(0, activityDatabase.activities.Length);
+
         players.Clear();
         var clients = NetworkManager.Singleton.ConnectedClientsList;
         foreach (var client in clients)
@@ -366,6 +406,9 @@ public class RolesManager : NetworkBehaviour
             player.roleOptions.Value = string.Join(";", chosenResponses);
             player.adjectiveOptions.Value = string.Join(";", chosenAdjectiveResponses);
 
+            // send the current activity to the player
+            player.activityIndex.Value = activityIndex;
+
 
             botCreated.Add(player.OwnerClientId, false);
 
@@ -419,33 +462,35 @@ public class RolesManager : NetworkBehaviour
 
         Debug.Log("[Roles]: All bots have been created");
 
-        players.Clear();
-        var clients = NetworkManager.Singleton.ConnectedClientsList;
-        foreach (var client in clients)
-        {
-            var player = client.PlayerObject.GetComponent<NetworkPlayer>();
-            players.Add(player);
-        }
+        // the below was to send the activity to all players, but we are doing that earlier now
 
-        int activityIndex = 0;
+        // players.Clear();
+        // var clients = NetworkManager.Singleton.ConnectedClientsList;
+        // foreach (var client in clients)
+        // {
+        //     var player = client.PlayerObject.GetComponent<NetworkPlayer>();
+        //     players.Add(player);
+        // }
 
-        for (int i = 0; i < players.Count; i++)
-        {
-            NetworkPlayer player = players[i];
+        // int activityIndex = 0;
 
-            player.activityIndex.Value = activityIndex;
-        }
+        // for (int i = 0; i < players.Count; i++)
+        // {
+        //     NetworkPlayer player = players[i];
+
+        //     player.activityIndex.Value = activityIndex;
+        // }
 
         // start the activity
 
-        var activity = activities[activityIndex];
+        var activity = activityDatabase.activities[activityIndex];
         StartCoroutine(RunActivity(activity));
 
     }
 
     public void Debug_RunActivity(int index)
     {
-        var activity = activities[index];
+        var activity = activityDatabase.activities[index];
 
         if (IsServer)
         {
@@ -472,6 +517,7 @@ public class RolesManager : NetworkBehaviour
         StartCoroutine(RunActivity(activity));
     }
 
+
     private IEnumerator RunActivity(RolesActivity activity)
     {
 
@@ -479,11 +525,20 @@ public class RolesManager : NetworkBehaviour
         string botPrompt = "";
         if (IsServer)
         {
-            players[0].myTurn.Value = true;
-            players[0].SetTargetPositionRpc(activity.navTarget.position);
+            // before, we would set activityIndex to notify the players of the activity starting, but we are doing that earlier now
+            // so we need to notify them now. we will do this by setting the turn order, which all players will listen for
+            SetTurnOrder();
+
+            List<ulong> turnOrder = GetTurnOrder(playerTurnOrder.Value.ToString());
+
+            // players[0].myTurn.Value = true;
+            // players[0].SetTargetPositionRpc(activity.navTarget.position);
+            var currentPlayer = NetworkManager.Singleton.ConnectedClients[turnOrder[0]].PlayerObject.GetComponent<NetworkPlayer>();
+            currentPlayer.myTurn.Value = true;
+            currentPlayer.SetTargetPositionRpc(activity.navTarget.position);
 
             // use bot prompt to get the first conversation from gemini
-            botPrompt = players[0].bot.Value.ToString();
+            botPrompt = currentPlayer.bot.Value.ToString();
         }
 
         if (thinkerModule == null)
@@ -537,6 +592,49 @@ public class RolesManager : NetworkBehaviour
         // all players should now have the conversation and be ready to listen for changes to the conversation index
         // so we need to give the current player control of the conversation
 
+    }
+
+    private void SetTurnOrder()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        List<ulong> order = new List<ulong>();
+
+        var clients = NetworkManager.Singleton.ConnectedClientsList;
+        foreach (var client in clients)
+        {
+            order.Add(client.ClientId);
+        }
+
+        Shuffle(order);
+
+        ListToTurnOrderString(order);
+
+    }
+
+    private static List<ulong> GetTurnOrder(string turnOrderString)
+    {
+        List<ulong> order = new List<ulong>();
+
+        string[] orderStrings = turnOrderString.Split(';');
+        foreach (var orderString in orderStrings)
+        {
+            ulong clientId;
+            if (ulong.TryParse(orderString, out clientId))
+            {
+                order.Add(clientId);
+            }
+        }
+
+        return order;
+    }
+
+    private void ListToTurnOrderString(List<ulong> order)
+    {
+        playerTurnOrder.Value = string.Join(";", order);
     }
 
     [Rpc(SendTo.Server)]
