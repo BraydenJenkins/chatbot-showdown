@@ -64,6 +64,12 @@ public class PlayerManager : MonoBehaviour
         avatarSelected = true;
     }
 
+    public void JoinGame()
+    {
+        gameJoined = true;
+        networkPlayer.playerName.Value = playerNameText.text;
+    }
+
     private void Avatars_Awake()
     {
         avatarInstances = new ARAI.Avatar[avatarDatabase.avatars.Length];
@@ -93,10 +99,7 @@ public class PlayerManager : MonoBehaviour
         }
 
         joinGameButton.interactable = false;
-        joinGameButton.onClick.AddListener(() =>
-        {
-            gameJoined = true;
-        });
+        joinGameButton.onClick.AddListener(JoinGame);
     }
 
     private void Avatars_Update()
@@ -109,6 +112,11 @@ public class PlayerManager : MonoBehaviour
             Debug.Log(playerNameText.text.Length);
             joinGameButton.interactable = playerNameText.text.Length > 2;
         }
+    }
+
+    private void OnDestroy()
+    {
+        joinGameButton.onClick.RemoveListener(JoinGame);
     }
 
     private void Awake()

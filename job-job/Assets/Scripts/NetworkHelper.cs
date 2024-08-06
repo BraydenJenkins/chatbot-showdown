@@ -230,10 +230,6 @@ public class NetworkHelper : MonoBehaviour
         NetworkManager.Singleton.StartClient();
     }
 
-    private void OnHostJoinRoomFailed(short arg1, string arg2)
-    {
-        throw new NotImplementedException();
-    }
 
     private string GenerateRandomRoomCode()
     {
