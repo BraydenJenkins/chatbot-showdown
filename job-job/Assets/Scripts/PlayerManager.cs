@@ -29,6 +29,7 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private Vector3 avatarOffset = Vector3.zero;
     [SerializeField] private Vector3 avatarRotationOffset = Vector3.zero;
     [SerializeField] private AnimatorController avatarSelectionController;
+    private AvatarButton[] avatarButtons;
 
     [SerializeField] private Button joinGameButton;
     private bool avatarSelected = false;
@@ -59,6 +60,14 @@ public class PlayerManager : MonoBehaviour
         // set selected avatar to active
         avatarInstances[index].GetComponentInChildren<SkinnedMeshRenderer>().enabled = true;
 
+        // set all buttons to deselected
+        for (int i = 0; i < avatarButtons.Length; i++)
+        {
+            avatarButtons[i].SetDeselected();
+        }
+        // set selected button to selected
+        avatarButtons[index].SetSelected();
+
         networkPlayer.avatarIndex.Value = avatarIndex;
 
         avatarSelected = true;
@@ -73,6 +82,8 @@ public class PlayerManager : MonoBehaviour
     private void Avatars_Awake()
     {
         avatarInstances = new ARAI.Avatar[avatarDatabase.avatars.Length];
+
+        avatarButtons = new AvatarButton[avatarDatabase.avatars.Length];
 
         // populate avatars
         for (int i = 0; i < avatarDatabase.avatars.Length; i++)
@@ -95,6 +106,8 @@ public class PlayerManager : MonoBehaviour
             {
                 SetAvatarIndex(index);
             });
+
+            avatarButtons[i] = button.GetComponent<AvatarButton>();
 
         }
 
