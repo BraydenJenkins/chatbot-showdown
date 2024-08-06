@@ -6,8 +6,6 @@ using DG.Tweening;
 using UnityEngine.UI;
 using ConversationAPI;
 using System;
-using ExitGames.Client.Photon.StructWrapping;
-using UnityEditor.Animations;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -28,12 +26,14 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private float avatarScale = 1f;
     [SerializeField] private Vector3 avatarOffset = Vector3.zero;
     [SerializeField] private Vector3 avatarRotationOffset = Vector3.zero;
-    [SerializeField] private AnimatorController avatarSelectionController;
+    [SerializeField] private RuntimeAnimatorController avatarSelectionController;
     private AvatarButton[] avatarButtons;
 
     [SerializeField] private Button joinGameButton;
     private bool avatarSelected = false;
     private bool gameJoined = false;
+
+    [SerializeField] private CanvasGroup lobbyCanvas;
 
 
     [SerializeField] private float transitionDuration = 0.5f;
@@ -77,6 +77,9 @@ public class PlayerManager : MonoBehaviour
     {
         gameJoined = true;
         networkPlayer.playerName.Value = playerNameText.text;
+        networkPlayer.lobbyState.Value = 2;
+
+        SetCanvasGroup(lobbyCanvas, true, transitionDuration);
     }
 
     private void Avatars_Awake()
@@ -122,7 +125,7 @@ public class PlayerManager : MonoBehaviour
 
         if (avatarSelected)
         {
-            Debug.Log(playerNameText.text.Length);
+            // Debug.Log(playerNameText.text.Length);
             joinGameButton.interactable = playerNameText.text.Length > 2;
         }
     }

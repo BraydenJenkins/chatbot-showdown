@@ -18,6 +18,7 @@ public class NetworkHelper : MonoBehaviour
 
     [SerializeField] private TMP_InputField roomCodeInput;
     public int roomCodeLength = 4;
+    [SerializeField] private TMP_Text lobbyRoomCodeText;
 
     private PhotonRealtimeTransport photonTransport;
 
@@ -71,6 +72,7 @@ public class NetworkHelper : MonoBehaviour
     {
         if (NetworkManager.Singleton.IsClient && NetworkManager.Singleton.LocalClientId == clientId)
         {
+            lobbyRoomCodeText.text = photonTransport.RoomName;
 
             string connectMessage = "Client connected";
             switch (connectionStatus)
@@ -167,6 +169,7 @@ public class NetworkHelper : MonoBehaviour
                 // couldn't connect while trying to create a room, this means the room doesn't exist yet, so we can host.
                 connectionStatus = ConnectionStatus.AttemptingHostWithUniqueRoomCode;
                 Debug.Log("Attempting to host with unique room code");
+                // dang, shutting down destroys all scene-placed network objects, so we can't.
                 NetworkManager.Singleton.Shutdown(true);
                 // StartHost();
                 StartCoroutine(StartHostAfterShutdown());
@@ -227,7 +230,12 @@ public class NetworkHelper : MonoBehaviour
         SetCanvasGroup(loadingCanvas, true, transitionDuration);
 
         connectionStatus = ConnectionStatus.AttemptingRoomCreation;
-        NetworkManager.Singleton.StartClient();
+        // dang, shutting down destroys all scene-placed network objects, so we can't do this start client trick.
+        // NetworkManager.Singleton.StartClient();
+
+        // so we will just straight up start the host and hope for a unique room code :/
+        connectionStatus = ConnectionStatus.AttemptingHostWithUniqueRoomCode;
+        NetworkManager.Singleton.StartHost();
     }
 
 
@@ -247,7 +255,7 @@ public class NetworkHelper : MonoBehaviour
 
     private void SetCanvasGroup(CanvasGroup canvasGroup, bool active, float fadeDuration = 0)
     {
-        Debug.Log("Setting canvas group: " + canvasGroup.name + " to " + active);
+        // Debug.Log("Setting canvas group: " + canvasGroup.name + " to " + active);
         canvasGroup.DOFade(active ? 1 : 0, fadeDuration);
         canvasGroup.interactable = active;
         canvasGroup.blocksRaycasts = active;

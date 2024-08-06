@@ -23,6 +23,7 @@ public class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<int> avatarIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<Vector3> targetPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    public NetworkVariable<int> lobbyState = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // job job
     public NetworkVariable<FixedString512Bytes> question = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -82,7 +83,7 @@ public class NetworkPlayer : NetworkBehaviour
         playerManager.LinkNetworkPlayer(this);
 
         // testing nav mesh
-        randomWalkCoroutine = StartCoroutine(RandomWalkCoroutine());
+        // randomWalkCoroutine = StartCoroutine(RandomWalkCoroutine());
     }
 
     public override void OnNetworkSpawn()
@@ -96,6 +97,9 @@ public class NetworkPlayer : NetworkBehaviour
 
         SetNameTMP(playerName.Value);
         playerName.OnValueChanged += SetNameTMP;
+
+        // set the lobby state
+        lobbyState.Value = 1;
 
         targetPosition.OnValueChanged += (previous, current) =>
         {
