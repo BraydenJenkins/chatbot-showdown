@@ -10,7 +10,8 @@ using UnityEngine.AI;
 public class NetworkPlayer : NetworkBehaviour
 {
     // references
-    [SerializeField] private ARAI.Avatar[] avatars;
+    [SerializeField] private AvatarDatabase avatarDatabase;
+    private ARAI.Avatar[] avatarInstances;
     private NavMeshAgent navMeshAgent;
     private Coroutine randomWalkCoroutine;
     [SerializeField] private TMP_Text playerNameText;
@@ -50,6 +51,18 @@ public class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<int> currentConversationIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private RolesManager rolesManager;
+
+    private void Awake()
+    {
+        avatarInstances = new ARAI.Avatar[avatarDatabase.avatars.Length];
+        for (int i = 0; i < avatarDatabase.avatars.Length; i++)
+        {
+            avatarInstances[i] = Instantiate(avatarDatabase.avatars[i], transform);
+            avatarInstances[i].gameObject.SetActive(false);
+            // disable all renderers so it doesn't show up in scene until we need it
+            avatarInstances[i].GetComponentInChildren<SkinnedMeshRenderer>().enabled = false;
+        }
+    }
 
 
     private void Start()
@@ -271,17 +284,17 @@ public class NetworkPlayer : NetworkBehaviour
         // for some reason, stickman is not being set to inactive (index 0)
 
         // lets set it to inactive here to see if that fixes it
-        avatars[0].gameObject.SetActive(false);
+        avatarInstances[0].gameObject.SetActive(false);
         // that fixed it. just gonna leave it like this for now
 
         // Set the avatar based on the index
-        avatars[index].gameObject.SetActive(true);
+        avatarInstances[index].gameObject.SetActive(true);
     }
 
     public void SetAvatar(int prev, int current)
     {
         // Set the previous avatar to inactive
-        avatars[prev].gameObject.SetActive(false);
+        avatarInstances[prev].gameObject.SetActive(false);
 
         SetAvatar(current);
     }

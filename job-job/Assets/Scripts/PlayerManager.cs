@@ -6,6 +6,8 @@ using DG.Tweening;
 using UnityEngine.UI;
 using ConversationAPI;
 using System;
+using ExitGames.Client.Photon.StructWrapping;
+using UnityEditor.Animations;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -17,9 +19,20 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private TMP_Text playerNameText;
 
     [SerializeField] private Button avatarButtonPrefab;
-    [SerializeField] private RectTransform avatarArea;
+    [SerializeField] private RectTransform avatarButtonArea;
     // TODO: swap to avatar database
-    [SerializeField] private ARAI.Avatar[] avatars;
+    [SerializeField] private AvatarDatabase avatarDatabase;
+    [SerializeField] private RectTransform avatarsArea;
+    [SerializeField] private GameObject chooseCharacterText;
+    private ARAI.Avatar[] avatarInstances;
+    [SerializeField] private float avatarScale = 1f;
+    [SerializeField] private Vector3 avatarOffset = Vector3.zero;
+    [SerializeField] private Vector3 avatarRotationOffset = Vector3.zero;
+    [SerializeField] private AnimatorController avatarSelectionController;
+
+    [SerializeField] private Button joinGameButton;
+    private bool avatarSelected = false;
+    private bool gameJoined = false;
 
 
     [SerializeField] private float transitionDuration = 0.5f;
@@ -35,21 +48,66 @@ public class PlayerManager : MonoBehaviour
     public void SetAvatarIndex(int index)
     {
         avatarIndex = index;
+
+        chooseCharacterText.SetActive(false);
+
+        // set all avatars to inactive
+        for (int i = 0; i < avatarInstances.Length; i++)
+        {
+            avatarInstances[i].GetComponentInChildren<SkinnedMeshRenderer>().enabled = false;
+        }
+        // set selected avatar to active
+        avatarInstances[index].GetComponentInChildren<SkinnedMeshRenderer>().enabled = true;
+
         networkPlayer.avatarIndex.Value = avatarIndex;
+
+        avatarSelected = true;
     }
 
     private void Avatars_Awake()
     {
+        avatarInstances = new ARAI.Avatar[avatarDatabase.avatars.Length];
+
         // populate avatars
-        for (int i = 0; i < avatars.Length; i++)
+        for (int i = 0; i < avatarDatabase.avatars.Length; i++)
         {
-            var button = Instantiate(avatarButtonPrefab, avatarArea);
-            button.GetComponentInChildren<Image>().sprite = avatars[i].avatarImage;
+
+
+            // insantiate avatar in avatars area
+            var avatar = Instantiate(avatarDatabase.avatars[i], avatarsArea);
+            avatar.transform.localScale = Vector3.one * avatarScale;
+            avatar.GetComponentInChildren<SkinnedMeshRenderer>().enabled = false;
+            avatar.transform.localPosition = avatarOffset;
+            avatar.transform.localEulerAngles = avatarRotationOffset;
+            avatar.GetComponent<Animator>().runtimeAnimatorController = avatarSelectionController;
+            avatarInstances[i] = avatar;
+
+            var button = Instantiate(avatarButtonPrefab, avatarButtonArea);
+            button.GetComponentInChildren<Image>().sprite = avatarDatabase.avatars[i].avatarImage;
             int index = i;
             button.onClick.AddListener(() =>
             {
                 SetAvatarIndex(index);
             });
+
+        }
+
+        joinGameButton.interactable = false;
+        joinGameButton.onClick.AddListener(() =>
+        {
+            gameJoined = true;
+        });
+    }
+
+    private void Avatars_Update()
+    {
+        if (gameJoined)
+            return;
+
+        if (avatarSelected)
+        {
+            Debug.Log(playerNameText.text.Length);
+            joinGameButton.interactable = playerNameText.text.Length > 2;
         }
     }
 
@@ -63,6 +121,7 @@ public class PlayerManager : MonoBehaviour
     private void Update()
     {
         Roles_Update();
+        Avatars_Update();
     }
 
     #region Job Job

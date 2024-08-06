@@ -196,7 +196,7 @@ public class NetworkHelper : MonoBehaviour
 
     public void JoinRoom()
     {
-        string roomCode = roomCodeInput.text;
+        string roomCode = roomCodeInput.text.ToUpper();
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as PhotonRealtimeTransport;
         transport.RoomName = roomCode;
 
