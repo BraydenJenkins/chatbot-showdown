@@ -12,8 +12,15 @@ public class PlayerManager : MonoBehaviour
     private NetworkPlayer networkPlayer;
 
     //  stores references to avatar ui
-    [SerializeField] private PagingScrollRect avatarSelectionScrollRect;
+    // [SerializeField] private PagingScrollRect avatarSelectionScrollRect;
+    [SerializeField] private int avatarIndex;
     [SerializeField] private TMP_Text playerNameText;
+
+    [SerializeField] private Button avatarButtonPrefab;
+    [SerializeField] private RectTransform avatarArea;
+    // TODO: swap to avatar database
+    [SerializeField] private ARAI.Avatar[] avatars;
+
 
     [SerializeField] private float transitionDuration = 0.5f;
 
@@ -21,12 +28,34 @@ public class PlayerManager : MonoBehaviour
     {
         networkPlayer = player;
 
-        networkPlayer.avatarIndex.Value = avatarSelectionScrollRect.CurrentPageIndex;
+        networkPlayer.avatarIndex.Value = avatarIndex;
         networkPlayer.playerName.Value = playerNameText.text;
+    }
+
+    public void SetAvatarIndex(int index)
+    {
+        avatarIndex = index;
+        networkPlayer.avatarIndex.Value = avatarIndex;
+    }
+
+    private void Avatars_Awake()
+    {
+        // populate avatars
+        for (int i = 0; i < avatars.Length; i++)
+        {
+            var button = Instantiate(avatarButtonPrefab, avatarArea);
+            button.GetComponentInChildren<Image>().sprite = avatars[i].avatarImage;
+            int index = i;
+            button.onClick.AddListener(() =>
+            {
+                SetAvatarIndex(index);
+            });
+        }
     }
 
     private void Awake()
     {
+        Avatars_Awake();
         JJ_Awake();
         Roles_Awake();
     }
@@ -151,7 +180,7 @@ public class PlayerManager : MonoBehaviour
 
     // activity
     [SerializeField] private CanvasGroup activityIntroCanvas, activityGoalCanvas;
-    [SerializeField] private TMP_Text activityText;
+    [SerializeField] private TMP_Text activityText, activityGoalText;
     [SerializeField] private ActivityDatabase activityDatabase;
     [SerializeField] private GameObject activityParent;
     private RolesActivity currentActivity;
@@ -359,6 +388,7 @@ public class PlayerManager : MonoBehaviour
 
         roleOptionsActivityText.text = activity.activityDescription;
         activityText.text = activity.activityDescription;
+        activityGoalText.text = activity.activityDescription;
 
         // instantiate the activity onto the game object
         currentActivity = Instantiate(activity, activityParent.transform);

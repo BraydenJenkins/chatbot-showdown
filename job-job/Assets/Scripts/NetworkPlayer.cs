@@ -10,7 +10,7 @@ using UnityEngine.AI;
 public class NetworkPlayer : NetworkBehaviour
 {
     // references
-    [SerializeField] private Avatar[] avatars;
+    [SerializeField] private ARAI.Avatar[] avatars;
     private NavMeshAgent navMeshAgent;
     private Coroutine randomWalkCoroutine;
     [SerializeField] private TMP_Text playerNameText;

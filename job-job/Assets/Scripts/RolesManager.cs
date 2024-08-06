@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using ConversationAPI;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.VisualScripting;
@@ -63,6 +65,8 @@ public class RolesManager : NetworkBehaviour
     // TODO: implement a proper networklist
     // public NetworkList<ulong> playerTurnOrder;
     public NetworkVariable<FixedString512Bytes> playerTurnOrder = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private Dictionary<ulong, Conversation> playerConversations = new Dictionary<ulong, Conversation>();
 
 
     private void Awake()
@@ -521,8 +525,67 @@ public class RolesManager : NetworkBehaviour
     private IEnumerator RunActivity(RolesActivity activity)
     {
 
-        // NOTE: the below is to allow for activity testing when not in a networked environment
-        string botPrompt = "";
+        // NOTE: the IsServer below is to allow for activity testing when not in a networked environment
+        List<string> botPrompts = new List<string>();
+        // string botPrompt = "";
+        List<Task<ConversationAPI.Conversation>> conversationTasks = new List<Task<ConversationAPI.Conversation>>();
+
+        if (IsServer)
+        {
+            // use bot prompt to get the first conversation from gemini
+            // botPrompt = currentPlayer.bot.Value.ToString();
+            // swapping to batch all prompts
+            foreach (var player in players)
+            {
+                botPrompts.Add(player.bot.Value.ToString());
+            }
+        }
+
+        if (thinkerModule == null)
+        {
+            thinkerModule = new ThinkerModule();
+        }
+
+        foreach (var prompt in botPrompts)
+        {
+            Debug.Log("[Roles]: Prompt: " + prompt);
+            var task = GetConversation(prompt);
+            conversationTasks.Add(task);
+        }
+
+        yield return new WaitUntil(() => conversationTasks.All(t => t.IsCompleted));
+
+        Debug.Log("[Roles]: All conversations received");
+
+        foreach (var task in conversationTasks)
+        {
+            if (!task.IsCompletedSuccessfully)
+            {
+                Debug.LogError("[Roles]: Failed to get conversation. This should NEVER happen: " + task.Exception);
+                yield break;
+            }
+        }
+
+        for (int i = 0; i < players.Count; i++)
+        {
+            NetworkPlayer player = players[i];
+            var playerConversation = conversationTasks[i].Result;
+            playerConversations.Add(player.OwnerClientId, playerConversation);
+
+            string conversationString = "";
+            foreach (var message in playerConversation.messages)
+            {
+                conversationString += message.role + ": " + message.content + "\n";
+            }
+
+            Debug.Log("[Roles]: " + player.OwnerClientId + " Conversation: " + conversationString);
+        }
+
+        // now that we have all conversations, we can send the current conversation to all players
+
+        // originally this was set up to work in a non-networked environment, but I think it is getting too complicated
+        // with all the turn orders and such, so I am going to assume that we are always in a networked environment
+
         if (IsServer)
         {
             // before, we would set activityIndex to notify the players of the activity starting, but we are doing that earlier now
@@ -531,48 +594,23 @@ public class RolesManager : NetworkBehaviour
 
             List<ulong> turnOrder = GetTurnOrder(playerTurnOrder.Value.ToString());
 
-            // players[0].myTurn.Value = true;
-            // players[0].SetTargetPositionRpc(activity.navTarget.position);
             var currentPlayer = NetworkManager.Singleton.ConnectedClients[turnOrder[0]].PlayerObject.GetComponent<NetworkPlayer>();
             currentPlayer.myTurn.Value = true;
             currentPlayer.SetTargetPositionRpc(activity.navTarget.position);
 
-            // use bot prompt to get the first conversation from gemini
-            botPrompt = currentPlayer.bot.Value.ToString();
+            Conversation currentConversation = playerConversations[turnOrder[0]];
+
+
+            // send the conversation to all players
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+                string conversationJSON = JsonUtility.ToJson(currentConversation);
+                player.currentConversation.Value = conversationJSON;
+            }
         }
 
-        if (thinkerModule == null)
-        {
-            thinkerModule = new ThinkerModule();
-        }
 
-        var task = GetConversation(botPrompt);
-
-        yield return new WaitUntil(() => task.IsCompleted);
-
-        if (!task.IsCompletedSuccessfully)
-        {
-            Debug.LogError("Failed to get conversation: " + task.Exception);
-            yield break;
-        }
-
-        ConversationAPI.Conversation conversation = task.Result;
-
-        string conversationString = "";
-        foreach (var message in conversation.messages)
-        {
-            conversationString += message.role + ": " + message.content + "\n";
-        }
-
-        Debug.Log("[Roles]: Conversation: " + conversationString);
-
-        // send the conversation to all players
-        for (int i = 0; i < players.Count; i++)
-        {
-            NetworkPlayer player = players[i];
-            string conversationJSON = JsonUtility.ToJson(conversation);
-            player.currentConversation.Value = conversationJSON;
-        }
 
         // now, whoever's turn it is needs to be able to control the conversation
         // lets have a server network variable that keeps track of how far into the conversation we are
@@ -678,11 +716,59 @@ public class RolesManager : NetworkBehaviour
             player.currentConversationIndex.Value = currentMessageIndex;
         }
 
+        // check if the conversation is over
+        if (currentMessageIndex > playerConversations[SenderClientId].messages.Length)
+        {
+            // the conversation is over
+            // so we need to move to the next player
+            // and send the conversation to all players
+
+            List<ulong> turnOrder = GetTurnOrder(playerTurnOrder.Value.ToString());
+
+            // remove the current player from the turn order
+            // and set their turn to false
+            currentPlayer.myTurn.Value = false;
+
+            turnOrder.RemoveAt(0);
+
+            if (turnOrder.Count == 0)
+            {
+                Debug.Log("[Roles]: All players have had their turn");
+                return;
+            }
+
+            currentPlayer = NetworkManager.Singleton.ConnectedClients[turnOrder[0]].PlayerObject.GetComponent<NetworkPlayer>();
+
+            // set the next player's turn to true
+            currentPlayer.myTurn.Value = true;
+            currentPlayer.SetTargetPositionRpc(activityDatabase.activities[activityIndex].navTarget.position);
+
+            // send the conversation to all players
+            Conversation nextConversation = playerConversations[turnOrder[0]];
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+                string conversationJSON = JsonUtility.ToJson(nextConversation);
+                player.currentConversation.Value = conversationJSON;
+            }
+
+            // set the current message index to 0
+            currentMessageIndex = 0;
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+                player.currentConversationIndex.Value = currentMessageIndex;
+            }
+
+            // set the turn order
+            ListToTurnOrderString(turnOrder);
+        }
+
     }
 
 
     // TODO: make the return type something more useful (like a conversation object)
-    private async Task<ConversationAPI.Conversation> GetConversation(string chatbotSystemPrompt)
+    private async Task<ConversationAPI.Conversation> GetConversation(string chatbotSystemPrompt, int maxAttempts = 3)
     {
 
         // DEBUG: 
@@ -700,48 +786,49 @@ public class RolesManager : NetworkBehaviour
 
         // prompt = "give me a couplet about minions from despicable me\nmake it good!";
 
+        string fallbackConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi there! Welcome to our coffee shop. How can I assist you today?\",\"animation\":\"smile\"},{\"role\":\"bot\",\"content\":\"Hello! I was hoping to have a charming conversation to get a free coffee.\",\"animation\":\"wink\"},{\"role\":\"agent\",\"content\":\"Oh no! It looks like our conversation generator is on a coffee break. Technical difficulties, you know?\",\"animation\":\"surprised\"},{\"role\":\"bot\",\"content\":\"Oh dear, even computers need a caffeine fix sometimes! How about I come back later?\",\"animation\":\"laugh\"},{\"role\":\"agent\",\"content\":\"That sounds like a plan! In the meantime, enjoy a virtual coffee on us. Cheers!\",\"animation\":\"cheerful\"}]}";
+
         Debug.Log(prompt);
 
-        Task<string> task;
-        if (!fakeThinkerModule)
+        for (int attempts = 0; attempts < maxAttempts; attempts++)
         {
-            task = thinkerModule.GetCompletion(prompt);
-        }
-        else
-        {
-            // string exampleConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi!\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"Hello there!\",\"animation\":\"wave\"}]}";
-            string exampleConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi!\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"Hello there!\",\"animation\":\"wave\"},{\"role\":\"agent\",\"content\":\"How can I assist you today?\",\"animation\":\"question\"},{\"role\":\"bot\",\"content\":\"I need help with my account.\",\"animation\":\"thinking\"},{\"role\":\"agent\",\"content\":\"Sure, I can help with that. What seems to be the issue?\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"I forgot my password.\",\"animation\":\"sad\"}]}";
-
-
-            task = Task.FromResult(exampleConversation);
-        }
-
-        await task;
-
-        if (task.IsCompletedSuccessfully)
-        {
-            string result = task.Result;
-            Debug.Log("Generated content: " + result);
-
-            // try to parse the JSON response
             try
             {
+                Task<string> task;
+                if (!fakeThinkerModule)
+                {
+                    task = thinkerModule.GetCompletion(prompt);
+                }
+                else
+                {
+                    string exampleConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi!\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"Hello there!\",\"animation\":\"wave\"},{\"role\":\"agent\",\"content\":\"How can I assist you today?\",\"animation\":\"question\"},{\"role\":\"bot\",\"content\":\"I need help with my account.\",\"animation\":\"thinking\"},{\"role\":\"agent\",\"content\":\"Sure, I can help with that. What seems to be the issue?\",\"animation\":\"neutral\"},{\"role\":\"bot\",\"content\":\"I forgot my password.\",\"animation\":\"sad\"}]}";
+
+                    task = Task.FromResult(exampleConversation);
+                }
+
+                string result = await task;
+
                 ConversationAPI.Conversation conversation = JsonUtility.FromJson<ConversationAPI.Conversation>(result);
                 return conversation;
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed to parse JSON response: " + e.Message);
-                return null;
+                Debug.LogError("Attempt " + (attempts + 1) + " failed: " + e.Message);
+                if (attempts < maxAttempts - 1)
+                {
+                    // exponential backoff
+                    await Task.Delay((int)Math.Pow(2, attempts) * 1000);
+                }
+                else
+                {
+                    Debug.LogError("[Roles]: Failed to get conversation multiple times: " + e.Message);
+                    return JsonUtility.FromJson<ConversationAPI.Conversation>(fallbackConversation);
+                }
             }
-
-        }
-        else
-        {
-            Debug.LogError("Failed to get completion: " + task.Exception);
-            return null;
         }
 
+        Debug.LogError("[Roles]: Failed to get conversation");
+        return JsonUtility.FromJson<ConversationAPI.Conversation>(fallbackConversation);
     }
 
     // Helper method to shuffle a list
