@@ -8,6 +8,7 @@ using Photon.Realtime;
 using DG.Tweening;
 using TMPro;
 using Netcode.Transports.PhotonRealtime;
+using UnityEngine.UI;
 
 public class NetworkHelper : MonoBehaviour
 {
@@ -259,5 +260,10 @@ public class NetworkHelper : MonoBehaviour
         canvasGroup.DOFade(active ? 1 : 0, fadeDuration);
         canvasGroup.interactable = active;
         canvasGroup.blocksRaycasts = active;
+
+        if (active)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
+        }
     }
 }

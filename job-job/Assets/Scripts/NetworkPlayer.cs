@@ -99,7 +99,9 @@ public class NetworkPlayer : NetworkBehaviour
         playerName.OnValueChanged += SetNameTMP;
 
         // set the lobby state
-        lobbyState.Value = 1;
+        // 1 is joined, 2 is ready, 3 is playing
+        if (IsOwner)
+            lobbyState.Value = 1;
 
         targetPosition.OnValueChanged += (previous, current) =>
         {

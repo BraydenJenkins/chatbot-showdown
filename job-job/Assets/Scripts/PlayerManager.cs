@@ -16,6 +16,8 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private int avatarIndex;
     [SerializeField] private TMP_Text playerNameText;
 
+    [SerializeField] private CanvasGroup mainCanvas;
+
     [SerializeField] private Button avatarButtonPrefab;
     [SerializeField] private RectTransform avatarButtonArea;
     // TODO: swap to avatar database
@@ -289,7 +291,6 @@ public class PlayerManager : MonoBehaviour
         questionsAnswered = 0;
 
 
-
         // ridiculous input field workarounds (jfc unity)
         roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
         roleAnswerInputField.onTouchScreenKeyboardStatusChanged.AddListener(Roles_OnTouchScreenKeyboardStatusChanged);
@@ -312,15 +313,15 @@ public class PlayerManager : MonoBehaviour
 
     public void Roles_SetQuestion(string question)
     {
+        // going to treat this as beginning of the whole game too (first time it is called, that is)
+        SetCanvasGroup(mainCanvas, false, transitionDuration);
+
         questionsAnswered++;
         string questionIntro = GetOrdinal(questionsAnswered) + " question";
         questionIntro = questionIntro.ToUpper();
         questionIntroText.text = questionIntro;
 
         SetCanvasGroup(rolesCanvas, true, transitionDuration);
-        SetCanvasGroup(questionIntroPanel, true, transitionDuration);
-        SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
-
 
         StartCoroutine(Roles_ShowQuestionAfterDelay(question, questionIntroDelay));
     }
@@ -399,6 +400,8 @@ public class PlayerManager : MonoBehaviour
 
     private IEnumerator Roles_ShowQuestionAfterDelay(string question, float delay)
     {
+        SetCanvasGroup(questionIntroPanel, true, transitionDuration);
+        SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
         yield return new WaitForSeconds(delay);
         SetCanvasGroup(questionIntroPanel, false, transitionDuration);
         SetCanvasGroup(rolesQuestionPanel, true, transitionDuration);
@@ -579,5 +582,10 @@ public class PlayerManager : MonoBehaviour
         canvasGroup.DOFade(active ? 1 : 0, fadeDuration);
         canvasGroup.interactable = active;
         canvasGroup.blocksRaycasts = active;
+
+        if (active)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
+        }
     }
 }

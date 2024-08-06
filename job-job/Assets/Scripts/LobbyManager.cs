@@ -16,10 +16,12 @@ public class LobbyManager : NetworkBehaviour
 
     [SerializeField] private TMP_Text playerCountText;
     [SerializeField] private Button startGameButton;
+    [SerializeField] private TMP_Text waitingForHostText;
 
     void Start()
     {
         startGameButton.gameObject.SetActive(false);
+        waitingForHostText.gameObject.SetActive(false);
 
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
@@ -64,6 +66,10 @@ public class LobbyManager : NetworkBehaviour
         if (IsServer)
         {
             startGameButton.gameObject.SetActive(true);
+        }
+        else
+        {
+            waitingForHostText.gameObject.SetActive(true);
         }
 
         Debug.Log("[LobbyManager] OnNetworkSpawn");

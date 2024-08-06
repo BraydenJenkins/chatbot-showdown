@@ -78,12 +78,13 @@ public class RolesManager : NetworkBehaviour
     {
         if (IsServer)
         {
-            serverCanvas.gameObject.SetActive(true);
+            // serverCanvas.gameObject.SetActive(true);
         }
     }
 
     // once we start the game, the first step is to send everyone a random role question
     // then start a timer
+
 
     public void SendRoleQuestions()
     {
