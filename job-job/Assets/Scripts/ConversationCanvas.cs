@@ -73,6 +73,11 @@ public class ConversationCanvas : MonoBehaviour
             return;
         }
 
+        if (animationRoutine != null)
+        {
+            StopCoroutine(animationRoutine);
+        }
+
         if (newIndex == currentMessageIndex + 1)
         {
             Debug.Log("Advancing conversation by one index.");
