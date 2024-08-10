@@ -36,6 +36,8 @@ public class PlayerManager : MonoBehaviour
     private bool gameJoined = false;
 
     [SerializeField] private CanvasGroup lobbyCanvas;
+    [SerializeField] private Image backgroundColorImage;
+    [SerializeField] private Color lobbyBackgroundColor;
 
 
     [SerializeField] private float transitionDuration = 0.5f;
@@ -82,6 +84,7 @@ public class PlayerManager : MonoBehaviour
         networkPlayer.lobbyState.Value = 2;
 
         SetCanvasGroup(lobbyCanvas, true, transitionDuration);
+        backgroundColorImage.DOColor(lobbyBackgroundColor, transitionDuration);
     }
 
     private void Avatars_Awake()
