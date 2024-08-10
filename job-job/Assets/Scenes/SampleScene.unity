@@ -432,6 +432,7 @@ GameObject:
   - component: {fileID: 43311912}
   - component: {fileID: 43311911}
   - component: {fileID: 43311910}
+  - component: {fileID: 43311913}
   m_Layer: 5
   m_Name: Activity Goal Page
   m_TagString: Untagged
@@ -510,6 +511,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 43311908}
   m_CullTransparentMesh: 1
+--- !u!114 &43311913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 43311908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &51849167
 GameObject:
   m_ObjectHideFlags: 0
@@ -2689,6 +2704,7 @@ GameObject:
   - component: {fileID: 180622583}
   - component: {fileID: 180622582}
   - component: {fileID: 180622581}
+  - component: {fileID: 180622584}
   m_Layer: 5
   m_Name: Prompt Intro Page
   m_TagString: Untagged
@@ -2766,6 +2782,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 180622579}
   m_CullTransparentMesh: 1
+--- !u!114 &180622584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 180622579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &187172535
 GameObject:
   m_ObjectHideFlags: 0
@@ -4060,6 +4090,7 @@ GameObject:
   - component: {fileID: 316215411}
   - component: {fileID: 316215410}
   - component: {fileID: 316215412}
+  - component: {fileID: 316215413}
   m_Layer: 5
   m_Name: Prompt Page
   m_TagString: Untagged
@@ -4142,6 +4173,20 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &316215413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 316215408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &317974290
 GameObject:
   m_ObjectHideFlags: 0
@@ -8750,6 +8795,7 @@ GameObject:
   - component: {fileID: 621498043}
   - component: {fileID: 621498042}
   - component: {fileID: 621498041}
+  - component: {fileID: 621498044}
   m_Layer: 5
   m_Name: Activity Intro Page
   m_TagString: Untagged
@@ -8827,6 +8873,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 621498039}
   m_CullTransparentMesh: 1
+--- !u!114 &621498044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621498039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &641593192
 GameObject:
   m_ObjectHideFlags: 0
@@ -13965,6 +14025,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1187431451}
   - component: {fileID: 1187431452}
+  - component: {fileID: 1187431453}
   m_Layer: 5
   m_Name: Conversation Page
   m_TagString: Untagged
@@ -14007,6 +14068,20 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1187431453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1187431450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &1200357350
 GameObject:
   m_ObjectHideFlags: 0
@@ -18521,6 +18596,7 @@ GameObject:
   - component: {fileID: 1575512377}
   - component: {fileID: 1575512376}
   - component: {fileID: 1575512375}
+  - component: {fileID: 1575512378}
   m_Layer: 5
   m_Name: Question Intro Page
   m_TagString: Untagged
@@ -18598,6 +18674,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1575512373}
   m_CullTransparentMesh: 1
+--- !u!114 &1575512378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1575512373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &1577365580
 GameObject:
   m_ObjectHideFlags: 0
@@ -21171,6 +21261,7 @@ GameObject:
   - component: {fileID: 1709560028}
   - component: {fileID: 1709560027}
   - component: {fileID: 1709560029}
+  - component: {fileID: 1709560030}
   m_Layer: 5
   m_Name: Question Page
   m_TagString: Untagged
@@ -21253,6 +21344,20 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1709560030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709560025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &1724642924
 GameObject:
   m_ObjectHideFlags: 0
@@ -23078,7 +23183,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 353, y: 752}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0.5
+  m_MatchWidthOrHeight: 1
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -23738,6 +23843,7 @@ GameObject:
   - component: {fileID: 1929757740}
   - component: {fileID: 1929757739}
   - component: {fileID: 1929757741}
+  - component: {fileID: 1929757742}
   m_Layer: 5
   m_Name: Waiting Page
   m_TagString: Untagged
@@ -23815,6 +23921,20 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1929757742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1929757737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AspectMode: 2
+  m_AspectRatio: 0.4742857
 --- !u!1 &1945330054
 GameObject:
   m_ObjectHideFlags: 0
