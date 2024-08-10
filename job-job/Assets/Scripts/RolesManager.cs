@@ -68,6 +68,10 @@ public class RolesManager : NetworkBehaviour
 
     private Dictionary<ulong, Conversation> playerConversations = new Dictionary<ulong, Conversation>();
 
+    private Dictionary<ulong, ulong> playerVotes = new Dictionary<ulong, ulong>();
+    // 0 - not voting, 1 - voting started, 2 - voting ended
+    public NetworkVariable<int> votingState = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
 
     private void Awake()
     {
@@ -739,6 +743,7 @@ public class RolesManager : NetworkBehaviour
             if (turnOrder.Count == 0)
             {
                 Debug.Log("[Roles]: All players have had their turn");
+                GoToVoting();
                 return;
             }
 
@@ -773,6 +778,87 @@ public class RolesManager : NetworkBehaviour
 
     }
 
+    private void GoToVoting()
+    {
+        playerVotes.Clear();
+        for (int i = 0; i < players.Count; i++)
+        {
+            var player = players[i];
+
+            playerVotes.Add(player.OwnerClientId, ulong.MaxValue);
+
+            player.votedPlayer.OnValueChanged += (prev, current) =>
+            {
+                OnPlayerVoted(prev, current, player.OwnerClientId);
+            };
+        }
+
+        // tell all players to go to the voting screen
+        votingState.Value = 1;
+    }
+
+    private void OnPlayerVoted(ulong previousValue, ulong newValue, ulong voterId)
+    {
+        // remove the event listener
+        var player = players.Find(p => p.OwnerClientId == voterId);
+        if (player == null)
+        {
+            Debug.LogError("Player " + voterId + " not found");
+            return;
+        }
+        player.bot.OnValueChanged -= (prev, current) =>
+        {
+            OnBotCreated(prev, current, voterId);
+        };
+
+        playerVotes[voterId] = newValue;
+
+        CheckAllPlayersVoted();
+
+    }
+
+    private void CheckAllPlayersVoted()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        foreach (var vote in playerVotes)
+        {
+            if (vote.Value == ulong.MaxValue)
+                return;
+        }
+
+        // all players have voted
+        // so we need to tally the votes and announce the winner
+        Dictionary<ulong, int> voteCounts = new Dictionary<ulong, int>();
+
+        foreach (var vote in playerVotes)
+        {
+            if (voteCounts.ContainsKey(vote.Value))
+            {
+                voteCounts[vote.Value]++;
+            }
+            else
+            {
+                voteCounts.Add(vote.Value, 1);
+            }
+        }
+
+        foreach (var player in players)
+        {
+            if (voteCounts.ContainsKey(player.OwnerClientId))
+                player.votes.Value = voteCounts[player.OwnerClientId];
+            else
+                player.votes.Value = 0;
+        }
+
+        // tell all players to show the total votes
+        votingState.Value = 2;
+
+    }
+
 
     // TODO: make the return type something more useful (like a conversation object)
     private async Task<ConversationAPI.Conversation> GetConversation(string chatbotSystemPrompt, int maxAttempts = 3)
@@ -784,7 +870,7 @@ public class RolesManager : NetworkBehaviour
         string systemPrompt = "bot system prompt: You are a chatbot whose goal is to engage in amusing and entertaining conversations. Your primary objective in this activity is to flirt with a barista in a clever and funny way to get a free coffee. The user has defined this about you: ";
         systemPrompt += chatbotSystemPrompt;
         string agentPersonality = "agent system prompt: You are a friendly and professional barista working at a popular coffee shop. You enjoy engaging in light-hearted conversations with customers but maintain a professional demeanor.";
-        string content = "Goal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging. Begin the conversation with the barista greeting the chatbot. Aim to make the conversation between 4 to 6 messages long.";
+        string content = "Goal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging. Begin the conversation with the barista greeting the chatbot. Aim to make the conversation between 4 to 6 messages long. Do not stop after only two messages.";
         string outputFormat = "The output must be JSON that describes an array of messages. Each message has a role, content, and animation. Use the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"agent\\\", \\\"content\\\": \\\"<agent's message>\\\", \\\"animation\\\": \\\"<agent's animation>\\\"}, {\\\"role\\\": \\\"bot\\\", \\\"content\\\": \\\"<bot's message>\\\", \\\"animation\\\": \\\"<bot's animation>\\\"}]}\nEnsure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message. Begin your message with \\\"{\\\"messages\\\": [\\\" to start the JSON object and end with \\\"]}\\\" to close the JSON object. You do not need to include the word json in your response. You MUST output a valid JSON string (NOT AN OBJECT).";
 
         string prompt = $"{systemPrompt}\n\n{agentPersonality}\n\n{content}\n\n{outputFormat}";

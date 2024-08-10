@@ -277,6 +277,11 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private Button nextLineButton;
     private bool myTurn = false;
 
+    // voting
+    [SerializeField] private CanvasGroup votingCanvas;
+    [SerializeField] private VoteButton[] voteButtons;
+
+
     private void Roles_Awake()
     {
         SetCanvasGroup(rolesCanvas, false);
@@ -290,6 +295,7 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(activityIntroCanvas, false);
         SetCanvasGroup(activityGoalCanvas, false);
         SetCanvasGroup(conversationCanvasGroup, false);
+        SetCanvasGroup(votingCanvas, false);
         playerTurnText.transform.parent.GetComponent<Image>().DOFade(0, 0);
 
         nextLineButton.gameObject.SetActive(false);
@@ -621,6 +627,85 @@ public class PlayerManager : MonoBehaviour
         if (myTurn)
         {
             networkPlayer.AdvanceConversationOnServer();
+        }
+    }
+
+    public void Roles_SetVotingState(int state)
+    {
+        switch (state)
+        {
+            case 0:
+                // voting not started
+                break;
+            case 1:
+                // voting started
+                Roles_GoToVoting();
+                break;
+            case 2:
+                // voting results
+                Roles_EndVotingAndShowResults();
+                break;
+        }
+    }
+
+    public void Roles_GoToVoting()
+    {
+        SetCanvasGroup(conversationCanvasGroup, false, transitionDuration);
+        SetCanvasGroup(votingCanvas, true, transitionDuration);
+
+        // set up voting buttons
+
+        // turn off all buttons
+        for (int i = 0; i < voteButtons.Length; i++)
+        {
+            voteButtons[i].gameObject.SetActive(false);
+        }
+
+        var networkPlayers = FindObjectsOfType<NetworkPlayer>();
+        for (int i = 0; i < networkPlayers.Length; i++)
+        {
+            NetworkPlayer player = networkPlayers[i];
+            if (player.OwnerClientId != networkPlayer.OwnerClientId)
+            {
+                var voteButton = voteButtons[i];
+                voteButton.SetNetworkPlayer(player);
+                voteButton.gameObject.SetActive(true);
+                var button = voteButton.GetComponent<Button>();
+                ulong OwnerClientId = player.OwnerClientId;
+                button.onClick.AddListener(() =>
+                {
+                    Roles_VoteForPlayer(OwnerClientId);
+                    voteButton.OnClick();
+                });
+            }
+            else
+            {
+                var voteButton = voteButtons[i];
+                voteButton.SetNetworkPlayer(player);
+                voteButton.gameObject.SetActive(true);
+                var button = voteButton.GetComponent<Button>();
+                ulong OwnerClientId = player.OwnerClientId;
+                voteButton.SetInteractable(false);
+            }
+        }
+    }
+
+    public void Roles_VoteForPlayer(ulong playerId)
+    {
+        // remove all vote listeners
+        foreach (var button in voteButtons)
+        {
+            button.GetComponent<Button>().onClick.RemoveAllListeners();
+        }
+
+        networkPlayer.votedPlayer.Value = playerId;
+    }
+
+    public void Roles_EndVotingAndShowResults()
+    {
+        foreach (var button in voteButtons)
+        {
+            button.ShowTotalVotes();
         }
     }
 

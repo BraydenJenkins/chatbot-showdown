@@ -51,7 +51,11 @@ public class NetworkPlayer : NetworkBehaviour
 
     public NetworkVariable<int> currentConversationIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    public NetworkVariable<ulong> votedPlayer = new NetworkVariable<ulong>(ulong.MaxValue, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<int> votes = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
     private RolesManager rolesManager;
+
 
     private void Awake()
     {
@@ -139,6 +143,8 @@ public class NetworkPlayer : NetworkBehaviour
             rolesManager.timerStart.OnValueChanged += OnTimerChanged;
 
             rolesManager.playerTurnOrder.OnValueChanged += OnTurnOrderChanged;
+
+            rolesManager.votingState.OnValueChanged += OnVotingChanged;
         }
         else
         {
@@ -286,6 +292,15 @@ public class NetworkPlayer : NetworkBehaviour
             rolesManager = FindObjectOfType<RolesManager>();
 
         rolesManager.AdvanceConversationRpc(OwnerClientId);
+    }
+
+    private void OnVotingChanged(int previous, int current)
+    {
+        Debug.Log("Voting state changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetVotingState(current);
+        }
     }
 
     #endregion
