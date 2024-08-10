@@ -265,11 +265,12 @@ public class PlayerManager : MonoBehaviour
 
     // activity
     [SerializeField] private CanvasGroup activityIntroCanvas, activityGoalCanvas;
-    [SerializeField] private TMP_Text activityText, activityGoalText;
+    [SerializeField] private TMP_Text activityText, activityGoalText, playerTurnText;
     [SerializeField] private ActivityDatabase activityDatabase;
     [SerializeField] private GameObject activityParent;
     private RolesActivity currentActivity;
     [SerializeField] private ConversationCanvas conversationCanvas;
+    [SerializeField] private CanvasGroup conversationCanvasGroup;
     [SerializeField] private Button nextLineButton;
     private bool myTurn = false;
 
@@ -285,6 +286,8 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(conversationPanel, false);
         SetCanvasGroup(activityIntroCanvas, false);
         SetCanvasGroup(activityGoalCanvas, false);
+        SetCanvasGroup(conversationCanvasGroup, false);
+        playerTurnText.transform.parent.GetComponent<Image>().DOFade(0, 0);
 
         nextLineButton.gameObject.SetActive(false);
 
@@ -525,6 +528,16 @@ public class PlayerManager : MonoBehaviour
         Debug.Log("Starting activity: ");
         // baristaActivity.SetActive(true);
 
+        activityParent.SetActive(true);
+
+        // show all player avatars
+        var networkPlayers = FindObjectsOfType<NetworkPlayer>();
+        foreach (var player in networkPlayers)
+        {
+            player.ShowAvatar();
+            player.SetNameActive(true);
+        }
+
         StartCoroutine(Roles_ShowActivityFlow());
 
 
@@ -544,6 +557,41 @@ public class PlayerManager : MonoBehaviour
         // TODO: decide how to handle the background / ar and when to toggle
         // right now, I'm building for AR first, so when the activity is set, we'll just toggle the background off
         SetCanvasGroup(rolesBackground, false, transitionDuration);
+
+        StartCoroutine(ShowPlayerTurn());
+    }
+
+    public void Roles_SetTurnOrder(string order)
+    {
+        Debug.Log("[PlayerManager]: turn order set");
+        // turn order is a list of ulongs
+        List<ulong> turnOrder = RolesManager.GetTurnOrder(order);
+        // current player is turnOrder[0]
+
+        // get player name from NetworkPlayer
+        var networkPlayers = FindObjectsOfType<NetworkPlayer>();
+        foreach (var player in networkPlayers)
+        {
+            if (player.OwnerClientId == turnOrder[0])
+            {
+                playerTurnText.text = player.playerName.Value.ToString();
+            }
+        }
+
+        StartCoroutine(ShowPlayerTurn());
+
+    }
+    private IEnumerator ShowPlayerTurn()
+    {
+        nextLineButton.interactable = false;
+        SetCanvasGroup(conversationCanvasGroup, false, transitionDuration);
+        playerTurnText.DOFade(1, transitionDuration);
+        playerTurnText.transform.parent.GetComponent<Image>().DOFade(1, transitionDuration);
+        yield return new WaitForSeconds(2);
+        playerTurnText.DOFade(0, transitionDuration);
+        playerTurnText.transform.parent.GetComponent<Image>().DOFade(0, transitionDuration);
+        SetCanvasGroup(conversationCanvasGroup, true, transitionDuration);
+        nextLineButton.interactable = true;
     }
 
     public void Roles_SetConversation(Conversation conversation)
@@ -578,14 +626,12 @@ public class PlayerManager : MonoBehaviour
 
     private void SetCanvasGroup(CanvasGroup canvasGroup, bool active, float fadeDuration = 0)
     {
-        Debug.Log("Setting canvas group: " + canvasGroup.name + " to " + active);
+        // Debug.Log("Setting canvas group: " + canvasGroup.name + " to " + active);
         canvasGroup.DOFade(active ? 1 : 0, fadeDuration);
         canvasGroup.interactable = active;
         canvasGroup.blocksRaycasts = active;
 
-        if (active)
-        {
-            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
-        }
+        LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
+
     }
 }

@@ -59,6 +59,8 @@ public class ConversationCanvas : MonoBehaviour
 
         currentMessageIndex = 0;
 
+        Debug.Log("New conversation began.");
+
         LayoutRebuilder.ForceRebuildLayoutImmediate(conversationText.transform.parent.GetComponent<RectTransform>());
     }
 
@@ -73,11 +75,13 @@ public class ConversationCanvas : MonoBehaviour
 
         if (newIndex == currentMessageIndex + 1)
         {
+            Debug.Log("Advancing conversation by one index.");
             // expected behavior, we are attempting to advance the conversation by one message
             AdvanceConversation();
         }
         else if (newIndex > currentMessageIndex + 1)
         {
+            Debug.Log("Skipping ahead in the conversation from " + currentMessageIndex + " to " + newIndex);
             // looks like we are trying to skip ahead in the conversation
             // so just show the full message up to that point.
             int endLength = 0;
@@ -90,8 +94,18 @@ public class ConversationCanvas : MonoBehaviour
         }
         else
         {
+            Debug.Log("Going back in the conversation from " + currentMessageIndex + " to " + newIndex);
             // we are trying to go back in the conversation
             // so just show the full message up to that point.
+
+            // actually, if newIndex is zero then clear out the conversation
+            if (newIndex == 0)
+            {
+                conversationText.maxVisibleCharacters = 0;
+                currentMessageIndex = 0;
+                return;
+            }
+
             int endLength = 0;
             for (int i = 0; i <= newIndex; i++)
             {

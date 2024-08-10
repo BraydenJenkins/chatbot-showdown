@@ -579,7 +579,7 @@ public class RolesManager : NetworkBehaviour
                 conversationString += message.role + ": " + message.content + "\n";
             }
 
-            Debug.Log("[Roles]: " + player.OwnerClientId + " Conversation: " + conversationString);
+            // Debug.Log("[Roles]: " + player.OwnerClientId + " Conversation: " + conversationString);
         }
 
         // now that we have all conversations, we can send the current conversation to all players
@@ -589,6 +589,8 @@ public class RolesManager : NetworkBehaviour
 
         if (IsServer)
         {
+            Debug.Log("[Roles]: Server starting the activity");
+
             // before, we would set activityIndex to notify the players of the activity starting, but we are doing that earlier now
             // so we need to notify them now. we will do this by setting the turn order, which all players will listen for
             SetTurnOrder();
@@ -635,6 +637,8 @@ public class RolesManager : NetworkBehaviour
 
     private void SetTurnOrder()
     {
+        Debug.Log("[Roles]: Setting turn order!");
+
         if (!IsServer)
         {
             return;
@@ -654,7 +658,7 @@ public class RolesManager : NetworkBehaviour
 
     }
 
-    private static List<ulong> GetTurnOrder(string turnOrderString)
+    public static List<ulong> GetTurnOrder(string turnOrderString)
     {
         List<ulong> order = new List<ulong>();
 
@@ -744,14 +748,7 @@ public class RolesManager : NetworkBehaviour
             currentPlayer.myTurn.Value = true;
             currentPlayer.SetTargetPositionRpc(activityDatabase.activities[activityIndex].navTarget.position);
 
-            // send the conversation to all players
-            Conversation nextConversation = playerConversations[turnOrder[0]];
-            for (int i = 0; i < players.Count; i++)
-            {
-                NetworkPlayer player = players[i];
-                string conversationJSON = JsonUtility.ToJson(nextConversation);
-                player.currentConversation.Value = conversationJSON;
-            }
+            Debug.Log("[Roles]: Resetting conversation index and sending new conversation to all players.");
 
             // set the current message index to 0
             currentMessageIndex = 0;
@@ -759,6 +756,15 @@ public class RolesManager : NetworkBehaviour
             {
                 NetworkPlayer player = players[i];
                 player.currentConversationIndex.Value = currentMessageIndex;
+            }
+
+            // send the conversation to all players
+            Conversation nextConversation = playerConversations[turnOrder[0]];
+            for (int i = 0; i < players.Count; i++)
+            {
+                NetworkPlayer player = players[i];
+                string conversationJSON = JsonUtility.ToJson(nextConversation);
+                player.currentConversation.Value = conversationJSON;
             }
 
             // set the turn order

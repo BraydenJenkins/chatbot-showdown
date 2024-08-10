@@ -63,6 +63,9 @@ public class NetworkPlayer : NetworkBehaviour
             // disable all renderers so it doesn't show up in scene until we need it
             avatarInstances[i].GetComponentInChildren<SkinnedMeshRenderer>().enabled = false;
         }
+
+        SetNameActive(false);
+
     }
 
 
@@ -225,6 +228,11 @@ public class NetworkPlayer : NetworkBehaviour
     {
         Debug.Log("Turn order changed: " + current);
 
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetTurnOrder(current.ToString());
+        }
+
         // turn order is changed when the activity starts
         // TODO: we could either alter turn order each turn so index 0 is always current player
         // or we could just keep track of the current player index so we don't have to network the whole list each time
@@ -297,6 +305,11 @@ public class NetworkPlayer : NetworkBehaviour
         avatarInstances[index].gameObject.SetActive(true);
     }
 
+    public void ShowAvatar()
+    {
+        avatarInstances[avatarIndex.Value].GetComponentInChildren<SkinnedMeshRenderer>().enabled = true;
+    }
+
     public void SetAvatar(int prev, int current)
     {
         // Set the previous avatar to inactive
@@ -304,6 +317,12 @@ public class NetworkPlayer : NetworkBehaviour
 
         SetAvatar(current);
     }
+
+    public void SetNameActive(bool active)
+    {
+        playerNameText.gameObject.SetActive(active);
+    }
+
 
     public void SetNameTMP(FixedString64Bytes name)
     {
@@ -329,7 +348,8 @@ public class NetworkPlayer : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void SetTargetPositionRpc(Vector3 position)
     {
-        StopCoroutine(randomWalkCoroutine);
+        if (randomWalkCoroutine != null)
+            StopCoroutine(randomWalkCoroutine);
 
         targetPosition.Value = position;
     }
