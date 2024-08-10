@@ -122,6 +122,17 @@ public class LobbyManager : NetworkBehaviour
             Debug.Log("connectedPlayers: " + connectedPlayers.Count);
         }
 
+        bool allPlayersNamed = true;
+        foreach (var networkPlayer in networkPlayers)
+        {
+            if (string.IsNullOrEmpty(networkPlayer.playerName.Value.ToString()) || networkPlayer.playerName.Value.ToString().Length < 2)
+            {
+                allPlayersNamed = false;
+                break;
+            }
+        }
+
+
         foreach (var connectedPlayer in connectedPlayers)
         {
             foreach (var networkPlayer in networkPlayers)
@@ -138,7 +149,10 @@ public class LobbyManager : NetworkBehaviour
 
         playerCountText.text = "(" + sortedNetworkPlayers.Count + "/8)";
 
-        startGameButton.interactable = sortedNetworkPlayers.Count >= 2;
+        // TODO: fix allPlayersNamed (it doesn't appear to be working)
+        allPlayersNamed = true;
+
+        startGameButton.interactable = sortedNetworkPlayers.Count >= 2 && allPlayersNamed;
 
         for (int i = 0; i < playerSlots.Count; i++)
         {
