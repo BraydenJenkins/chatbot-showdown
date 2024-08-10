@@ -242,7 +242,7 @@ public class NetworkHelper : MonoBehaviour
 
     private string GenerateRandomRoomCode()
     {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const string chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789";
         var random = new System.Random();
         var roomCode = new char[roomCodeLength];
         for (int i = 0; i < roomCodeLength; i++)
