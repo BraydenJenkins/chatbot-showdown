@@ -21,7 +21,6 @@ public class VoiceRequest : MonoBehaviour
 
     public CharacterProfile[] characterProfiles;
 
-    private readonly Queue<AudioClip> streamClipQueue = new();
     private ElevenLabsClient api;
 
     private void OnValidate() {
@@ -30,13 +29,6 @@ public class VoiceRequest : MonoBehaviour
                 if (audioSource == null) audioSource = GetComponent<AudioSource>();
         }
 
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SendVoiceRequest("Hey hi", 0);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SendVoiceRequest("Hey hi", 1);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SendVoiceRequest("Hey hi", 2);
     }
 
     private async void Start() {
@@ -50,18 +42,13 @@ public class VoiceRequest : MonoBehaviour
             if (characterProfiles.Length > 0) {
                 foreach (CharacterProfile cp in characterProfiles)
                     if (cp.voice == null) cp.voice = (await api.VoicesEndpoint.GetAllVoicesAsync(destroyCancellationToken)).FirstOrDefault();
-            }
-            
-            //streamClipQueue.Clear();
-            //var streamQueueCts = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
-            //PlayStreamQueue(streamQueueCts.Token);                    
+            }               
         } catch (Exception e) {
             Debug.LogError(e);
         }
     }
 
     public async void SendVoiceRequest(string msg, int index) {
-        Debug.Log("Sending voice request");
         var defaultVoiceSettings = await api.VoicesEndpoint.GetDefaultVoiceSettingsAsync();
         var voiceClip = await api.TextToSpeechEndpoint.TextToSpeechAsync(msg, characterProfiles[index].voice, defaultVoiceSettings);
 
