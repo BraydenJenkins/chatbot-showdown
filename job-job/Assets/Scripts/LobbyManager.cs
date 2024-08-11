@@ -18,6 +18,8 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private Button startGameButton;
     [SerializeField] private TMP_Text waitingForHostText;
 
+    [SerializeField] private int minimumPlayers = 2;
+
     void Start()
     {
         startGameButton.gameObject.SetActive(false);
@@ -152,7 +154,7 @@ public class LobbyManager : NetworkBehaviour
         // TODO: fix allPlayersNamed (it doesn't appear to be working)
         allPlayersNamed = true;
 
-        startGameButton.interactable = sortedNetworkPlayers.Count >= 2 && allPlayersNamed;
+        startGameButton.interactable = sortedNetworkPlayers.Count >= minimumPlayers && allPlayersNamed;
 
         for (int i = 0; i < playerSlots.Count; i++)
         {
