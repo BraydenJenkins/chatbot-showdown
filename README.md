@@ -4,6 +4,8 @@
 
 Welcome to Chatbot Showdown, the 8-player AI-based party game where creativity and competition collide! Powered by Google Gemini, Chatbot Showdown elevates traditional party game mechanics with AI.
 
+![Watch on YouTube](https://www.youtube.com/watch?v=0CPWghGf-uo)
+
 [![Chatbot Showdown on YouTube](https://img.youtube.com/vi/0CPWghGf-uo/maxres1.jpg)](https://www.youtube.com/watch?v=0CPWghGf-uo)
 
 Players start by answering quirky questions, generating a pool of unique words and phrases. These phrases are mixed into random sets, which are randomly assigned to a player. You are then given a goal for your bot to complete, and each player must use their set of words to craft imaginative chatbot prompts to have their chatbot take on the challenge given.
