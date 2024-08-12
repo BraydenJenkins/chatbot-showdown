@@ -19,6 +19,8 @@ public class ConversationCanvas : MonoBehaviour
 
     [SerializeField] private Image leftTriangle, rightTriangle;
 
+    private List<bool> messageLeftAlignments;
+
     public void SetConversation(Conversation conversation)
     {
         List<string> roles = new List<string>();
@@ -58,6 +60,8 @@ public class ConversationCanvas : MonoBehaviour
 
         Dictionary<string, string> roleAlignments = new Dictionary<string, string>();
 
+        messageLeftAlignments = new List<bool>();
+
         // if no player found, we will just assume the first role is the agent
         if (playerRoleIndex == -1)
         {
@@ -89,6 +93,7 @@ public class ConversationCanvas : MonoBehaviour
             fullText += message;
             int length = message.Length - alignment.Length;
             messageLengths.Add(length);
+            messageLeftAlignments.Add(roleAlignments[part.role] == "left");
         }
 
         conversationText.text = fullText;
@@ -97,8 +102,8 @@ public class ConversationCanvas : MonoBehaviour
 
         Debug.Log("New conversation began.");
 
-        rightTriangle.DOColor(Color.white, 0.25f);
-        leftTriangle.DOColor(Color.clear, 0.25f);
+        // rightTriangle.DOColor(Color.white, 0.25f);
+        // leftTriangle.DOColor(Color.clear, 0.25f);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(conversationText.transform.parent.GetComponent<RectTransform>());
     }
@@ -179,7 +184,7 @@ public class ConversationCanvas : MonoBehaviour
         animationRoutine = StartCoroutine(AnimateConversation());
 
         // swap the triangles
-        if (currentMessageIndex % 2 == 0)
+        if (messageLeftAlignments[currentMessageIndex])
         {
             rightTriangle.DOColor(Color.clear, 0);
             leftTriangle.DOColor(Color.white, 0);
