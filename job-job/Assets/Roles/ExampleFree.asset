@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: ExampleFree
   m_EditorClassIdentifier: 
   answers:
-  - pirate
+  - hater
+  - lover
   - alien
+  - pirate

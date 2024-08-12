@@ -8,6 +8,7 @@ using DG.Tweening;
 using System;
 using ElevenLabs.Voices;
 using Unity.Netcode;
+using QFSW.QC.Parsers;
 
 
 public class ConversationCanvas : MonoBehaviour
@@ -27,6 +28,8 @@ public class ConversationCanvas : MonoBehaviour
     [SerializeField] private Voice defaultVoice;
 
     [SerializeField] private Transform playerAvatarTransform, cpuAvatarTransform;
+
+    private List<string> conversationAnimations;
 
     public void SetConversation(Conversation conversation)
     {
@@ -68,6 +71,7 @@ public class ConversationCanvas : MonoBehaviour
         Dictionary<string, string> roleAlignments = new Dictionary<string, string>();
 
         messageIsPlayer = new List<bool>();
+        conversationAnimations = new List<string>();
 
         // if no player found, we will just assume the first role is the agent
         if (playerRoleIndex == -1)
@@ -101,6 +105,7 @@ public class ConversationCanvas : MonoBehaviour
             int length = message.Length - alignment.Length;
             messageLengths.Add(length);
             messageIsPlayer.Add(roleAlignments[part.role] == "left");
+            conversationAnimations.Add(part.animation);
         }
 
         conversationText.text = fullText;
@@ -172,6 +177,20 @@ public class ConversationCanvas : MonoBehaviour
         }
     }
 
+    private int GetIndexOfAnimation(string animationName)
+    {
+        // ['idle', 'annoyed shake', 'defeat', 'nod yes', 'pointing', 'salute', 'shake fist', 'shake head no', 'strong taunt', 'mean taunt', 'wave', 'whatever']
+        string[] anims = new string[] { "idle", "annoyed shake", "defeat", "nod yes", "pointing", "salute", "shake fist", "shake head no", "strong taunt", "mean taunt", "wave", "whatever" };
+        for (int i = 0; i < anims.Length; i++)
+        {
+            if (anims[i] == animationName)
+            {
+                return i;
+            }
+        }
+        return 0;
+    }
+
     public void AdvanceConversation()
     {
         // conversationText.maxVisibleCharacters += messageLengths[currentMessageIndex];
@@ -207,6 +226,9 @@ public class ConversationCanvas : MonoBehaviour
                     if (child.gameObject.activeSelf)
                     {
                         voice = avatarDatabase.avatars[child.GetSiblingIndex()].voice;
+                        var animator = child.GetComponent<Animator>();
+                        animator.SetInteger("AnimIndex", GetIndexOfAnimation(conversationAnimations[currentMessageIndex]));
+                        StartCoroutine(EndAnimation(animator));
                         Debug.Log("Found player voice: " + voice.Name + ", sibling index: " + child.GetSiblingIndex() + ", child name: " + child.name);
                         break;
                     }
@@ -224,6 +246,9 @@ public class ConversationCanvas : MonoBehaviour
                     if (child.gameObject.activeSelf)
                     {
                         voice = cpuDatabase.avatars[child.GetSiblingIndex()].voice;
+                        var animator = child.GetComponent<Animator>();
+                        animator.SetInteger("AnimIndex", GetIndexOfAnimation(conversationAnimations[currentMessageIndex]));
+                        StartCoroutine(EndAnimation(animator));
                         Debug.Log("Found cpu voice: " + voice.Name + ", sibling index: " + child.GetSiblingIndex() + ", child name: " + child.name);
                         break;
                     }
@@ -253,6 +278,11 @@ public class ConversationCanvas : MonoBehaviour
         currentMessageIndex++;
     }
 
+    private IEnumerator EndAnimation(Animator animator)
+    {
+        yield return new WaitForSeconds(0.25f);
+        animator.SetInteger("AnimIndex", 0);
+    }
 
 
     private IEnumerator AnimateConversation(Voice voice)

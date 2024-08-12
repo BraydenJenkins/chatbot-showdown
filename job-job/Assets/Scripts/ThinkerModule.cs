@@ -55,7 +55,38 @@ public class ThinkerModule
     public async Task<string> GetCompletion(string prompt)
     {
         string fullUrl = url + apiKey;
-        string jsonData = "{\"contents\": [{\"parts\":[{\"text\": \"" + prompt + "\"}]}]}";
+        // string jsonData = "{\"contents\": [{\"parts\":[{\"text\": \"" + prompt + "\"}]}]}";
+
+        // JSON payload including safetySettings
+        string jsonData = @"{
+            ""contents"": [
+                {
+                    ""parts"": [
+                        {
+                            ""text"": """ + prompt + @"""
+                        }
+                    ]
+                }
+            ],
+            ""safetySettings"": [
+                {
+                    ""category"": ""HARM_CATEGORY_HARASSMENT"",
+                    ""threshold"": ""BLOCK_ONLY_HIGH""
+                },
+                {
+                    ""category"": ""HARM_CATEGORY_HATE_SPEECH"",
+                    ""threshold"": ""BLOCK_ONLY_HIGH""
+                },
+                {
+                    ""category"": ""HARM_CATEGORY_DANGEROUS_CONTENT"",
+                    ""threshold"": ""BLOCK_ONLY_HIGH""
+                },
+                {
+                    ""category"": ""HARM_CATEGORY_SEXUALLY_EXPLICIT"",
+                    ""threshold"": ""BLOCK_ONLY_HIGH""
+                }
+            ]
+        }";
 
         using (UnityWebRequest webRequest = new UnityWebRequest(fullUrl, "POST"))
         {

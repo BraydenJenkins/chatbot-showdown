@@ -732,7 +732,7 @@ MonoBehaviour:
   - voice:
       name: Eric
       id: cjVigY5qzO86Huf0OWal
-  useVoice: 0
+  useVoice: 1
 --- !u!82 &458776790
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2455,7 +2455,7 @@ PrefabInstance:
     - target: {fileID: 650673411654927921, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000061035156
+      value: 0.000030517578
       objectReference: {fileID: 0}
     - target: {fileID: 650713254950513437, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
@@ -5895,7 +5895,7 @@ PrefabInstance:
     - target: {fileID: 7227454997976206633, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
       propertyPath: scoreLimit
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7227454997976206633, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
@@ -6646,12 +6646,12 @@ PrefabInstance:
     - target: {fileID: 8369101583945736174, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
       propertyPath: timerDuration
-      value: 5
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 8369101583945736174, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
       propertyPath: fakeThinkerModule
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8414064436123548958, guid: 03708b543961d1e4d90c10f8d3255b3c,
         type: 3}
@@ -7034,7 +7034,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 729461159501080657, guid: 03708b543961d1e4d90c10f8d3255b3c, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03708b543961d1e4d90c10f8d3255b3c, type: 3}
