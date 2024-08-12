@@ -1,10 +1,8 @@
-# Chatbot Showdown
+# [Chatbot Showdown](https://www.youtube.com/watch?v=0CPWghGf-uo)
 
 ![Chatbot Showdown](job-job/Assets/UI/chatbot_title.png)
 
 Welcome to Chatbot Showdown, the 8-player AI-based party game where creativity and competition collide! Powered by Google Gemini, Chatbot Showdown elevates traditional party game mechanics with AI.
-
-![Watch on YouTube](https://www.youtube.com/watch?v=0CPWghGf-uo)
 
 [![Chatbot Showdown on YouTube](https://img.youtube.com/vi/0CPWghGf-uo/maxres1.jpg)](https://www.youtube.com/watch?v=0CPWghGf-uo)
 
