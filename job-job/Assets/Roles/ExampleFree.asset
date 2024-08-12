@@ -10,9 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71bc934e940bb664185bf01534d8d40e, type: 3}
-  m_Name: ExampleAdjectives
+  m_Name: ExampleFree
   m_EditorClassIdentifier: 
   answers:
-  - cringy
-  - insecure
-  - confident
+  - pirate
+  - alien

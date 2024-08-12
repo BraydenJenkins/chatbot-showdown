@@ -35,9 +35,12 @@ public class NetworkPlayer : NetworkBehaviour
     public NetworkVariable<FixedString512Bytes> roleAnswer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<FixedString512Bytes> adjectiveQuestion = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString512Bytes> adjectiveAnswer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString512Bytes> freeQuestion = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString512Bytes> freeAnswer = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public NetworkVariable<FixedString512Bytes> roleOptions = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString512Bytes> adjectiveOptions = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString512Bytes> freeOptions = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public NetworkVariable<FixedString512Bytes> bot = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -126,9 +129,11 @@ public class NetworkPlayer : NetworkBehaviour
         // roles
         roleQuestion.OnValueChanged += OnRoleQuestionChanged;
         adjectiveQuestion.OnValueChanged += OnRoleQuestionChanged;
+        freeQuestion.OnValueChanged += OnRoleQuestionChanged;
 
         roleOptions.OnValueChanged += OnRoleOptionsChanged;
         adjectiveOptions.OnValueChanged += OnAdjectiveOptionsChanged;
+        freeOptions.OnValueChanged += OnAdjectiveOptionsChanged;
 
         activityIndex.OnValueChanged += OnActivityChanged;
         myTurn.OnValueChanged += OnMyTurnChanged;

@@ -107,6 +107,9 @@ public class VoteButton : MonoBehaviour
             totalScore = networkPlayer.score.Value;
         }
 
+        // WAIT! Score isn't based on votes, it's based on place.
+        // TODO: fix scoring.
+
         int previousScore = totalScore - votes;
 
         for (int i = 0; i < scoreBoxes.Length; i++)

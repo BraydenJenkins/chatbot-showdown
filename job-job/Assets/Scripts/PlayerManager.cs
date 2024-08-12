@@ -263,7 +263,7 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private TMP_Text roleOptionsText;
     [SerializeField] private TMP_Text roleOptionsActivityText;
 
-    [SerializeField] private int expectedOptionsReceived = 2;
+    [SerializeField] private int expectedOptionsReceived = 3;
     private int optionsReceived = 0;
     private bool activityReceived = false;
 
