@@ -293,6 +293,16 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private Button nextRoundButton;
     [SerializeField] private TMP_Text nextRoundTMP;
 
+    public int scoreLimit = 10;
+
+    // winner
+    [SerializeField] private CanvasGroup winnerCanvas;
+    [SerializeField] private TMP_Text winnerText;
+    [SerializeField] private Transform winnerAvatarParent;
+    private ARAI.Avatar[] winnerAvatarInstances;
+    [SerializeField] private float winnerAvatarScale = 1f;
+    [SerializeField] private RuntimeAnimatorController avatarWinnerController;
+
 
     private void Roles_Awake()
     {
@@ -310,6 +320,7 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(votingCanvas, false);
         SetCanvasGroup(votingTitleCanvas, false);
         SetCanvasGroup(votingScoresCanvas, false);
+        SetCanvasGroup(winnerCanvas, false);
         playerTurnText.transform.parent.GetComponent<Image>().DOFade(0, 0);
 
         nextLineButton.gameObject.SetActive(false);
@@ -318,7 +329,7 @@ public class PlayerManager : MonoBehaviour
 
         PopulatePlayerAvatarSlot();
         PopulateCPUAvatarSlot();
-
+        PopulateWinnerAvatarSlot();
 
         // ridiculous input field workarounds (jfc unity)
         roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
@@ -357,6 +368,22 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
+    private void PopulateWinnerAvatarSlot()
+    {
+        // instantiate one of each avatar in the player avatar slot, and set all to false
+        winnerAvatarInstances = new ARAI.Avatar[avatarDatabase.avatars.Length];
+        for (int i = 0; i < avatarDatabase.avatars.Length; i++)
+        {
+            var avatar = Instantiate(avatarDatabase.avatars[i], winnerAvatarParent);
+            winnerAvatarInstances[i] = avatar;
+            avatar.transform.localScale = Vector3.one * winnerAvatarScale;
+            avatar.transform.localPosition = Vector3.zero;
+            avatar.transform.localEulerAngles = Vector3.zero;
+            avatar.GetComponent<Animator>().runtimeAnimatorController = avatarWinnerController;
+            avatar.gameObject.SetActive(false);
+        }
+    }
+
     private int currentConversationAvatar = -1;
 
     public void Roles_SetConversationAvatar(int index)
@@ -368,6 +395,8 @@ public class PlayerManager : MonoBehaviour
         // }
         // // set selected avatar to active
         // conversationAvatarInstances[index].gameObject.SetActive(true);
+
+        Debug.Log("Setting conversation avatar to: " + index);
 
         currentConversationAvatar = index;
     }
@@ -415,6 +444,25 @@ public class PlayerManager : MonoBehaviour
         }
 
         nextLineButton.interactable = nextLineInteractableBase && !conversationCanvas.animatingConversation;
+    }
+
+    public void Roles_StartNewRoundAndReset()
+    {
+        questionsAnswered = 0;
+
+        roleOptionsText.text = "";
+
+        // clear all children of wordArea
+        var children = roleOptionsArea.GetComponentsInChildren<Transform>();
+        foreach (var child in children)
+        {
+            Debug.Log("Destroying child: " + child.gameObject.name);
+            if (child != roleOptionsArea)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
     }
 
     public void Roles_SetQuestion(string question)
@@ -591,6 +639,8 @@ public class PlayerManager : MonoBehaviour
         // // SetCanvasGroup(roleOptionsPanel, true, transitionDuration);
         // StartCoroutine(ShowRoleOptionsAfterDelay(questionIntroDelay));
 
+        // since we simplified the question and answer flow, we can just show the role options right away
+        expectedOptionsReceived = 1;
         optionsReceived++;
 
         Roles_CheckOptionsAndActivitySet();
@@ -720,6 +770,8 @@ public class PlayerManager : MonoBehaviour
             if (player.OwnerClientId == turnOrder[0])
             {
                 playerTurnText.text = player.playerName.Value.ToString();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(playerTurnText.transform.parent.GetComponent<RectTransform>());
+                Debug.Log("Player turn: " + player.playerName.Value);
             }
         }
 
@@ -804,6 +856,10 @@ public class PlayerManager : MonoBehaviour
                 // voting results
                 Roles_EndVotingAndShowResults();
                 break;
+            case 3:
+                // end game
+                Roles_EndOfGame();
+                break;
         }
     }
 
@@ -831,11 +887,14 @@ public class PlayerManager : MonoBehaviour
             voteButtons[i].gameObject.SetActive(false);
         }
 
+        // for now, we will let the player vote for themself if they are the only player
+
+
         var networkPlayers = FindObjectsOfType<NetworkPlayer>();
         for (int i = 0; i < networkPlayers.Length; i++)
         {
             NetworkPlayer player = networkPlayers[i];
-            if (player.OwnerClientId != networkPlayer.OwnerClientId)
+            if (player.OwnerClientId != networkPlayer.OwnerClientId || networkPlayers.Length == 1)
             {
                 var voteButton = voteButtons[i];
                 voteButton.SetNetworkPlayer(player);
@@ -862,6 +921,7 @@ public class PlayerManager : MonoBehaviour
 
     public void Roles_VoteForPlayer(ulong playerId)
     {
+        Debug.Log("Voting for player: " + playerId);
         // remove all vote listeners
         foreach (var button in voteButtons)
         {
@@ -908,7 +968,7 @@ public class PlayerManager : MonoBehaviour
         bool scoreLimitReached = false;
         foreach (var player in networkPlayers)
         {
-            if (player.score.Value >= 10)
+            if (player.score.Value >= scoreLimit)
             {
                 scoreLimitReached = true;
                 break;
@@ -933,6 +993,33 @@ public class PlayerManager : MonoBehaviour
     {
         nextRoundButton.onClick.RemoveAllListeners();
         networkPlayer.EndGameOnServer();
+    }
+
+    private void Roles_EndOfGame()
+    {
+        SetCanvasGroup(votingCanvas, false, transitionDuration);
+        SetCanvasGroup(votingScoresCanvas, false, transitionDuration);
+        SetCanvasGroup(winnerCanvas, true, transitionDuration);
+
+        var networkPlayers = FindObjectsOfType<NetworkPlayer>();
+        Array.Sort(networkPlayers, (a, b) => b.score.Value.CompareTo(a.score.Value));
+
+        // first player in array is the winner!
+        winnerText.text = networkPlayers[0].playerName.Value.ToString();
+        // set winner avatar
+        for (int i = 0; i < winnerAvatarInstances.Length; i++)
+        {
+            winnerAvatarInstances[i].gameObject.SetActive(false);
+        }
+        winnerAvatarInstances[networkPlayers[0].avatarIndex.Value].gameObject.SetActive(true);
+        // we have 3 animations for the winner, chosen at random.
+        // so pick randomly 0, 0.5, or 1 (blend tree)
+        float[] options = { 0, 0.5f, 1 };
+        // pick randomly
+        float blend = options[UnityEngine.Random.Range(0, options.Length)];
+        winnerAvatarInstances[networkPlayers[0].avatarIndex.Value].GetComponent<Animator>().SetFloat("Blend", blend);
+
+
     }
 
     private void Roles_StartNextActivity()

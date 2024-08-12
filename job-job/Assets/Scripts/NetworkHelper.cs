@@ -179,6 +179,11 @@ public class NetworkHelper : MonoBehaviour
         }
     }
 
+    public void QuitRoom()
+    {
+        NetworkManager.Singleton.Shutdown(true);
+    }
+
     private IEnumerator StartHostAfterShutdown()
     {
         while (NetworkManager.Singleton.IsListening)

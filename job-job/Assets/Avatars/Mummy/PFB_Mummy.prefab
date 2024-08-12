@@ -91,3 +91,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: d26aea84f0b66774ebcad36c2932725b, type: 3}
+  voice:
+    name: Marshal - German Prof.
+    id: nzeAacJi50IvxcyDnMXa

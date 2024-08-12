@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using ConversationAPI;
+using DG.Tweening;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.VisualScripting;
@@ -40,7 +41,10 @@ public class RolesManager : NetworkBehaviour
         RoleQuestions,
         AdjectiveQuestions,
         FreeQuestion,
-        BotCreation
+        BotCreation,
+        Activity,
+        Voting,
+        Scoring
     }
     private RolesState currentState = RolesState.RoleQuestions;
 
@@ -125,6 +129,10 @@ public class RolesManager : NetworkBehaviour
             player.roleQuestion.Value = randomQuestion;
 
             Debug.Log("[Roles]: " + player.playerName.Value + " has been sent the question: " + randomQuestion);
+
+            // reset myTurn just in case
+            player.myTurn.Value = false;
+            player.currentAvatarIndex.Value = -1;
 
             responses.Add(player.OwnerClientId, new RolesResponses());
 
@@ -435,12 +443,49 @@ public class RolesManager : NetworkBehaviour
         Shuffle(allAdjectiveResponses);
         Shuffle(allFreeResponses);
 
-        string roleResponsesString = string.Join(", ", allRoleResponses);
-        Debug.Log("[Roles]: All role responses: " + roleResponsesString);
-        string adjectiveResponsesString = string.Join(", ", allAdjectiveResponses);
-        Debug.Log("[Roles]: All adjective responses: " + adjectiveResponsesString);
-        string freeResponsesString = string.Join(", ", allFreeResponses);
-        Debug.Log("[Roles]: All free responses: " + freeResponsesString);
+        // string roleResponsesString = string.Join(", ", allRoleResponses);
+        // Debug.Log("[Roles]: All role responses: " + roleResponsesString);
+        // string adjectiveResponsesString = string.Join(", ", allAdjectiveResponses);
+        // Debug.Log("[Roles]: All adjective responses: " + adjectiveResponsesString);
+        // string freeResponsesString = string.Join(", ", allFreeResponses);
+        // Debug.Log("[Roles]: All free responses: " + freeResponsesString);
+
+        List<(string, ulong)> allWords = new List<(string, ulong)>();
+        foreach (var response in allRoleResponses)
+        {
+            string[] words = response.Item1.Split(' ');
+            foreach (var word in words)
+            {
+                allWords.Add((word, response.Item2));
+            }
+        }
+        foreach (var response in allAdjectiveResponses)
+        {
+            string[] words = response.Item1.Split(' ');
+            foreach (var word in words)
+            {
+                allWords.Add((word, response.Item2));
+            }
+        }
+        foreach (var response in allFreeResponses)
+        {
+            string[] words = response.Item1.Split(' ');
+            foreach (var word in words)
+            {
+                allWords.Add((word, response.Item2));
+            }
+        }
+
+        // remove all empty strings and default options from allWords
+        allWords.RemoveAll(word => word.Item1 == "");
+        allWords.RemoveAll(word => defaultOptions.Contains(word.Item1));
+
+        string allWordsString = "";
+        foreach (var word in allWords)
+        {
+            allWordsString += word.Item1 + ", ";
+        }
+        Debug.Log("[Roles]: All words: " + allWordsString);
 
         botCreated.Clear();
 
@@ -448,95 +493,127 @@ public class RolesManager : NetworkBehaviour
         {
             NetworkPlayer player = players[i];
 
-            // send role responses in order, skipping any responses from the player
-            List<(string, ulong)> roleResponses = new List<(string, ulong)>();
+            // // send role responses in order, skipping any responses from the player
+            // List<(string, ulong)> roleResponses = new List<(string, ulong)>();
+            // List<string> chosenResponses = new List<string>();
+            // for (int j = 0; j < allRoleResponses.Count; j++)
+            // {
+            //     if (allRoleResponses[j].Item2 != player.OwnerClientId)
+            //     {
+            //         roleResponses.Add((allRoleResponses[j].Item1, allRoleResponses[j].Item2));
+            //     }
+            // }
+
+            // string roleResponsesString2 = string.Join(", ", roleResponses);
+
+            // Debug.Log("[Roles]: " + player.playerName.Value + ": possible: " + roleResponsesString2);
+
+            // // roleResponses now contains all responses except the player's own
+            // // we want to give them the first 2 responses, if they exist
+            // while (chosenResponses.Count < 2 && roleResponses.Count > 0)
+            // {
+            //     chosenResponses.Add(roleResponses[0].Item1);
+            //     allRoleResponses.Remove(roleResponses[0]);
+            //     roleResponses.RemoveAt(0);
+            // }
+            // if (chosenResponses.Count < 2)
+            // {
+            //     // if there are not enough responses, add a random example response
+            //     int randomIndex = Random.Range(0, exampleRoleAnswers.answers.Count);
+            //     chosenResponses.Add(exampleRoleAnswers.answers[randomIndex]);
+            // }
+
+            // Debug.Log("[Roles]: " + player.playerName.Value + ": chosen: " + string.Join(", ", chosenResponses));
+
+            // // send adjective responses in order, skipping any responses from the player
+            // List<(string, ulong)> adjectiveResponses = new List<(string, ulong)>();
+            // List<string> chosenAdjectiveResponses = new List<string>();
+            // for (int j = 0; j < allAdjectiveResponses.Count; j++)
+            // {
+            //     if (allAdjectiveResponses[j].Item2 != player.OwnerClientId)
+            //     {
+            //         adjectiveResponses.Add((allAdjectiveResponses[j].Item1, allAdjectiveResponses[j].Item2));
+            //     }
+            // }
+
+            // // adjectiveResponses now contains all responses except the player's own
+            // // we want to give them the first 2 responses, if they exist
+            // while (chosenAdjectiveResponses.Count < 2 && adjectiveResponses.Count > 0)
+            // {
+            //     chosenAdjectiveResponses.Add(adjectiveResponses[0].Item1);
+            //     allAdjectiveResponses.Remove(adjectiveResponses[0]);
+            //     adjectiveResponses.RemoveAt(0);
+            // }
+            // if (chosenAdjectiveResponses.Count < 2)
+            // {
+            //     // if there are not enough responses, add a random example response
+            //     int randomIndex = Random.Range(0, exampleAdjectiveAnswers.answers.Count);
+            //     chosenAdjectiveResponses.Add(exampleAdjectiveAnswers.answers[randomIndex]);
+            // }
+
+            // // free responses
+            // List<(string, ulong)> freeResponses = new List<(string, ulong)>();
+            // List<string> chosenFreeResponses = new List<string>();
+            // for (int j = 0; j < allFreeResponses.Count; j++)
+            // {
+            //     if (allFreeResponses[j].Item2 != player.OwnerClientId)
+            //     {
+            //         freeResponses.Add((allFreeResponses[j].Item1, allFreeResponses[j].Item2));
+            //     }
+            // }
+
+            // // freeResponses now contains all responses except the player's own
+            // // we want to give them the first 2 responses, if they exist
+            // while (chosenFreeResponses.Count < 2 && freeResponses.Count > 0)
+            // {
+            //     chosenFreeResponses.Add(freeResponses[0].Item1);
+            //     allFreeResponses.Remove(freeResponses[0]);
+            //     freeResponses.RemoveAt(0);
+            // }
+            // if (chosenFreeResponses.Count < 2)
+            // {
+            //     // if there are not enough responses, add a random example response
+            //     int randomIndex = Random.Range(0, exampleFreeAnswers.answers.Count);
+            //     chosenFreeResponses.Add(exampleFreeAnswers.answers[randomIndex]);
+            // }
+
+            // I think the above is WAY overcomplicated
+            // lets just chop up all words from all responses and send them out randomly,
+            // but not to the player who submitted them
+
+            Shuffle(allWords);
+
+            // get the first 20 words that are not from the player
+
             List<string> chosenResponses = new List<string>();
-            for (int j = 0; j < allRoleResponses.Count; j++)
+
+            for (int j = 0; j < allWords.Count; j++)
             {
-                if (allRoleResponses[j].Item2 != player.OwnerClientId)
+                if (allWords[j].Item2 != player.OwnerClientId)
                 {
-                    roleResponses.Add((allRoleResponses[j].Item1, allRoleResponses[j].Item2));
+                    chosenResponses.Add(allWords[j].Item1);
+                    if (chosenResponses.Count >= 20)
+                    {
+                        break;
+                    }
                 }
             }
 
-            string roleResponsesString2 = string.Join(", ", roleResponses);
-
-            Debug.Log("[Roles]: " + player.playerName.Value + ": possible: " + roleResponsesString2);
-
-            // roleResponses now contains all responses except the player's own
-            // we want to give them the first 2 responses, if they exist
-            while (chosenResponses.Count < 2 && roleResponses.Count > 0)
-            {
-                chosenResponses.Add(roleResponses[0].Item1);
-                allRoleResponses.Remove(roleResponses[0]);
-                roleResponses.RemoveAt(0);
-            }
-            if (chosenResponses.Count < 2)
-            {
-                // if there are not enough responses, add a random example response
-                int randomIndex = Random.Range(0, exampleRoleAnswers.answers.Count);
-                chosenResponses.Add(exampleRoleAnswers.answers[randomIndex]);
-            }
-
-            Debug.Log("[Roles]: " + player.playerName.Value + ": chosen: " + string.Join(", ", chosenResponses));
-
-            // send adjective responses in order, skipping any responses from the player
-            List<(string, ulong)> adjectiveResponses = new List<(string, ulong)>();
-            List<string> chosenAdjectiveResponses = new List<string>();
-            for (int j = 0; j < allAdjectiveResponses.Count; j++)
-            {
-                if (allAdjectiveResponses[j].Item2 != player.OwnerClientId)
-                {
-                    adjectiveResponses.Add((allAdjectiveResponses[j].Item1, allAdjectiveResponses[j].Item2));
-                }
-            }
-
-            // adjectiveResponses now contains all responses except the player's own
-            // we want to give them the first 2 responses, if they exist
-            while (chosenAdjectiveResponses.Count < 2 && adjectiveResponses.Count > 0)
-            {
-                chosenAdjectiveResponses.Add(adjectiveResponses[0].Item1);
-                allAdjectiveResponses.Remove(adjectiveResponses[0]);
-                adjectiveResponses.RemoveAt(0);
-            }
-            if (chosenAdjectiveResponses.Count < 2)
-            {
-                // if there are not enough responses, add a random example response
-                int randomIndex = Random.Range(0, exampleAdjectiveAnswers.answers.Count);
-                chosenAdjectiveResponses.Add(exampleAdjectiveAnswers.answers[randomIndex]);
-            }
-
-            // free responses
-            List<(string, ulong)> freeResponses = new List<(string, ulong)>();
-            List<string> chosenFreeResponses = new List<string>();
-            for (int j = 0; j < allFreeResponses.Count; j++)
-            {
-                if (allFreeResponses[j].Item2 != player.OwnerClientId)
-                {
-                    freeResponses.Add((allFreeResponses[j].Item1, allFreeResponses[j].Item2));
-                }
-            }
-
-            // freeResponses now contains all responses except the player's own
-            // we want to give them the first 2 responses, if they exist
-            while (chosenFreeResponses.Count < 2 && freeResponses.Count > 0)
-            {
-                chosenFreeResponses.Add(freeResponses[0].Item1);
-                allFreeResponses.Remove(freeResponses[0]);
-                freeResponses.RemoveAt(0);
-            }
-            if (chosenFreeResponses.Count < 2)
-            {
-                // if there are not enough responses, add a random example response
-                int randomIndex = Random.Range(0, exampleFreeAnswers.answers.Count);
-                chosenFreeResponses.Add(exampleFreeAnswers.answers[randomIndex]);
-            }
+            // add some examples too to fill in the gaps and give people enough to work with
+            // let's do one example from each category
+            int randomIndex = Random.Range(0, exampleRoleAnswers.answers.Count);
+            chosenResponses.Add(exampleRoleAnswers.answers[randomIndex]);
+            randomIndex = Random.Range(0, exampleAdjectiveAnswers.answers.Count);
+            chosenResponses.Add(exampleAdjectiveAnswers.answers[randomIndex]);
+            randomIndex = Random.Range(0, exampleFreeAnswers.answers.Count);
+            chosenResponses.Add(exampleFreeAnswers.answers[randomIndex]);
 
             // send the responses to the player
             chosenResponses.AddRange(defaultOptions);
+            // using roleOptions as the sole source of responses now
             player.roleOptions.Value = string.Join(";", chosenResponses);
-            player.adjectiveOptions.Value = string.Join(";", chosenAdjectiveResponses);
-            player.freeOptions.Value = string.Join(";", chosenFreeResponses);
+            // player.adjectiveOptions.Value = string.Join(";", chosenAdjectiveResponses);
+            // player.freeOptions.Value = string.Join(";", chosenFreeResponses);
 
             // send the current activity to the player
             player.activityIndex.Value = activityIndex;
@@ -544,6 +621,7 @@ public class RolesManager : NetworkBehaviour
 
             botCreated.Add(player.OwnerClientId, false);
 
+            Debug.Log("[Roles]: adding bot created listener for " + player.OwnerClientId);
             // listen for bot creation
             player.bot.OnValueChanged += (prev, current) =>
             {
@@ -569,6 +647,8 @@ public class RolesManager : NetworkBehaviour
             Debug.LogError("Player " + clientId + " not found");
             return;
         }
+
+        Debug.Log("[Roles]: removing bot created listener for " + clientId);
         player.bot.OnValueChanged -= (prev, current) =>
         {
             OnBotCreated(prev, current, clientId);
@@ -586,6 +666,11 @@ public class RolesManager : NetworkBehaviour
             return;
         }
 
+        if (currentState != RolesState.BotCreation)
+        {
+            return;
+        }
+
         foreach (var player in botCreated)
         {
             if (!player.Value)
@@ -594,24 +679,7 @@ public class RolesManager : NetworkBehaviour
 
         Debug.Log("[Roles]: All bots have been created");
 
-        // the below was to send the activity to all players, but we are doing that earlier now
-
-        // players.Clear();
-        // var clients = NetworkManager.Singleton.ConnectedClientsList;
-        // foreach (var client in clients)
-        // {
-        //     var player = client.PlayerObject.GetComponent<NetworkPlayer>();
-        //     players.Add(player);
-        // }
-
-        // int activityIndex = 0;
-
-        // for (int i = 0; i < players.Count; i++)
-        // {
-        //     NetworkPlayer player = players[i];
-
-        //     player.activityIndex.Value = activityIndex;
-        // }
+        currentState = RolesState.Activity;
 
         // start the activity
 
@@ -694,6 +762,8 @@ public class RolesManager : NetworkBehaviour
             }
         }
 
+        playerConversations.Clear();
+
         for (int i = 0; i < players.Count; i++)
         {
             NetworkPlayer player = players[i];
@@ -725,6 +795,7 @@ public class RolesManager : NetworkBehaviour
             List<ulong> turnOrder = GetTurnOrder(playerTurnOrder.Value.ToString());
 
             var currentPlayer = NetworkManager.Singleton.ConnectedClients[turnOrder[0]].PlayerObject.GetComponent<NetworkPlayer>();
+            Debug.Log("[Roles]: Starting with " + currentPlayer.playerName.Value + "'s turn");
             currentPlayer.myTurn.Value = true;
             currentPlayer.SetTargetPositionRpc(activity.navTarget.position);
 
@@ -914,7 +985,7 @@ public class RolesManager : NetworkBehaviour
             }
 
             currentPlayer = NetworkManager.Singleton.ConnectedClients[turnOrder[0]].PlayerObject.GetComponent<NetworkPlayer>();
-
+            Debug.Log("[Roles]: Moving to " + currentPlayer.playerName.Value + "'s turn");
             // set the next player's turn to true
             currentPlayer.myTurn.Value = true;
             currentPlayer.SetTargetPositionRpc(activityDatabase.activities[activityIndex].navTarget.position);
@@ -957,11 +1028,18 @@ public class RolesManager : NetworkBehaviour
 
             playerVotes.Add(player.OwnerClientId, ulong.MaxValue);
 
+            player.ResetVoteRpc();
+
             player.votedPlayer.OnValueChanged += (prev, current) =>
             {
                 OnPlayerVoted(prev, current, player.OwnerClientId);
             };
         }
+
+        currentState = RolesState.Voting;
+
+        // clear the turn order
+        playerTurnOrder.Value = "";
 
         // tell all players to go to the voting screen
         votingState.Value = 1;
@@ -969,6 +1047,11 @@ public class RolesManager : NetworkBehaviour
 
     private void OnPlayerVoted(ulong previousValue, ulong newValue, ulong voterId)
     {
+        if (newValue == ulong.MaxValue)
+        {
+            return;
+        }
+
         // remove the event listener
         var player = players.Find(p => p.OwnerClientId == voterId);
         if (player == null)
@@ -976,9 +1059,9 @@ public class RolesManager : NetworkBehaviour
             Debug.LogError("Player " + voterId + " not found");
             return;
         }
-        player.bot.OnValueChanged -= (prev, current) =>
+        player.votedPlayer.OnValueChanged -= (prev, current) =>
         {
-            OnBotCreated(prev, current, voterId);
+            OnPlayerVoted(prev, current, voterId);
         };
 
         playerVotes[voterId] = newValue;
@@ -990,6 +1073,11 @@ public class RolesManager : NetworkBehaviour
     private void CheckAllPlayersVoted()
     {
         if (!IsServer)
+        {
+            return;
+        }
+
+        if (currentState != RolesState.Voting)
         {
             return;
         }
@@ -1019,11 +1107,18 @@ public class RolesManager : NetworkBehaviour
         foreach (var player in players)
         {
             if (voteCounts.ContainsKey(player.OwnerClientId))
+            {
                 player.votes.Value = voteCounts[player.OwnerClientId];
+                Debug.Log("[Roles]: " + player.playerName.Value + " received " + player.votes.Value + " votes this round.");
+            }
             else
+            {
                 player.votes.Value = 0;
+            }
+
 
             player.score.Value += player.votes.Value;
+            Debug.Log("[Roles]: " + player.playerName.Value + " now has " + player.score.Value + " points.");
         }
 
         // TODO: fix scoring
@@ -1044,17 +1139,25 @@ public class RolesManager : NetworkBehaviour
         //     lastVotes = sortedVotes[i].Value;
         // }
 
+        currentState = RolesState.Scoring;
 
         // tell all players to show the total votes
         votingState.Value = 2;
 
         if (IsServer)
         {
-            nextRoundButton.interactable = true;
-            nextRoundButton.blocksRaycasts = true;
-            nextRoundButton.alpha = 1;
+            StartCoroutine(ShowNextRoundButtonAfterDelay(6));
         }
 
+    }
+
+    private IEnumerator ShowNextRoundButtonAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        nextRoundButton.interactable = true;
+        nextRoundButton.blocksRaycasts = true;
+        nextRoundButton.DOFade(1, 0.25f);
     }
 
 

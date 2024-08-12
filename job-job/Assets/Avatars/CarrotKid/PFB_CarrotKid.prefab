@@ -91,3 +91,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: 211d3713b81a2e645afe99e67ac7cd95, type: 3}
+  voice:
+    name: Marshal - Toon Character
+    id: lE5ZJB6jGeeuvSNxOvs2

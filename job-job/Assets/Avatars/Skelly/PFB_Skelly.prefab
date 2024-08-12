@@ -91,3 +91,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: 4f21759a7c9c3954791bb692d98a6b29, type: 3}
+  voice:
+    name: Charlie
+    id: IKne3meq5aSn9XLyUdCD

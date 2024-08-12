@@ -91,3 +91,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: 08fdae04aacbbe141ad60fe2d3caa420, type: 3}
+  voice:
+    name: Bill
+    id: pqHfZKP75CvOlQylNhV4

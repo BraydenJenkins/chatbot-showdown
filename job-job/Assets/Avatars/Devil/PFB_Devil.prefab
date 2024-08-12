@@ -91,3 +91,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: 0e3c139365ab05147b7e34ecfe8ea0bd, type: 3}
+  voice:
+    name: Callum
+    id: N2lVS1w4EtoT3dr4eOWO

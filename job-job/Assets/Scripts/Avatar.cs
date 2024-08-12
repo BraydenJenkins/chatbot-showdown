@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using ElevenLabs.Voices;
 using UnityEngine;
 
 namespace ARAI
@@ -7,6 +8,8 @@ namespace ARAI
     public class Avatar : MonoBehaviour
     {
         public Sprite avatarImage;
+
+        public Voice voice;
     }
 
 }

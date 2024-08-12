@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using ConversationAPI;
+using Mono.CSharp;
 using TMPro;
 using Unity.Collections;
 using Unity.Netcode;
@@ -52,7 +53,7 @@ public class NetworkPlayer : NetworkBehaviour
 
     public NetworkVariable<FixedString4096Bytes> currentConversation = new NetworkVariable<FixedString4096Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString512Bytes> currentBotPrompt = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    public NetworkVariable<int> currentAvatarIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> currentAvatarIndex = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public NetworkVariable<int> currentConversationIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
@@ -127,13 +128,13 @@ public class NetworkPlayer : NetworkBehaviour
         fragments.OnValueChanged += OnFragmentsChanged;
 
         // roles
-        roleQuestion.OnValueChanged += OnRoleQuestionChanged;
+        roleQuestion.OnValueChanged += OnFirstQuestionChanged;
         adjectiveQuestion.OnValueChanged += OnRoleQuestionChanged;
         freeQuestion.OnValueChanged += OnRoleQuestionChanged;
 
         roleOptions.OnValueChanged += OnRoleOptionsChanged;
-        adjectiveOptions.OnValueChanged += OnAdjectiveOptionsChanged;
-        freeOptions.OnValueChanged += OnAdjectiveOptionsChanged;
+        // adjectiveOptions.OnValueChanged += OnAdjectiveOptionsChanged;
+        // freeOptions.OnValueChanged += OnAdjectiveOptionsChanged;
 
         activityIndex.OnValueChanged += OnActivityChanged;
         myTurn.OnValueChanged += OnMyTurnChanged;
@@ -222,6 +223,18 @@ public class NetworkPlayer : NetworkBehaviour
         }
     }
 
+    private void OnFirstQuestionChanged(FixedString512Bytes previous, FixedString512Bytes current)
+    {
+        Debug.Log("First question changed from " + previous + " to " + current);
+        if (IsLocalPlayer)
+        {
+            // role question is the first question, so treat this as beginning of a new activity
+            playerManager.Roles_StartNewRoundAndReset();
+            activityStarted = false;
+            playerManager.Roles_SetQuestion(current.ToString());
+        }
+    }
+
     private void OnRoleQuestionChanged(FixedString512Bytes previous, FixedString512Bytes current)
     {
         Debug.Log("Role question changed from " + previous + " to " + current);
@@ -260,7 +273,15 @@ public class NetworkPlayer : NetworkBehaviour
 
     private void OnTurnOrderChanged(FixedString512Bytes prev, FixedString512Bytes current)
     {
-        Debug.Log("Turn order changed: " + current);
+        Debug.Log("Turn order changed: " + current.ToString());
+
+        string turnOrder = current.ToString();
+
+        if (string.IsNullOrEmpty(turnOrder) || turnOrder.Length == 0)
+        {
+            Debug.Log("Turn order is empty");
+            return;
+        }
 
         if (IsLocalPlayer)
         {
@@ -404,6 +425,12 @@ public class NetworkPlayer : NetworkBehaviour
             StopCoroutine(randomWalkCoroutine);
 
         targetPosition.Value = position;
+    }
+
+    [Rpc(SendTo.Owner)]
+    public void ResetVoteRpc()
+    {
+        votedPlayer.Value = ulong.MaxValue;
     }
 
 }

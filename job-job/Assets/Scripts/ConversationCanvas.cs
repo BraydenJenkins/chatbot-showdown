@@ -6,6 +6,8 @@ using ConversationAPI;
 using UnityEngine.UI;
 using DG.Tweening;
 using System;
+using ElevenLabs.Voices;
+using Unity.Netcode;
 
 
 public class ConversationCanvas : MonoBehaviour
@@ -19,7 +21,12 @@ public class ConversationCanvas : MonoBehaviour
 
     [SerializeField] private Image leftTriangle, rightTriangle;
 
-    private List<bool> messageLeftAlignments;
+    private List<bool> messageIsPlayer;
+
+    [SerializeField] private AvatarDatabase avatarDatabase, cpuDatabase;
+    [SerializeField] private Voice defaultVoice;
+
+    [SerializeField] private Transform playerAvatarTransform, cpuAvatarTransform;
 
     public void SetConversation(Conversation conversation)
     {
@@ -60,7 +67,7 @@ public class ConversationCanvas : MonoBehaviour
 
         Dictionary<string, string> roleAlignments = new Dictionary<string, string>();
 
-        messageLeftAlignments = new List<bool>();
+        messageIsPlayer = new List<bool>();
 
         // if no player found, we will just assume the first role is the agent
         if (playerRoleIndex == -1)
@@ -93,7 +100,7 @@ public class ConversationCanvas : MonoBehaviour
             fullText += message;
             int length = message.Length - alignment.Length;
             messageLengths.Add(length);
-            messageLeftAlignments.Add(roleAlignments[part.role] == "left");
+            messageIsPlayer.Add(roleAlignments[part.role] == "left");
         }
 
         conversationText.text = fullText;
@@ -181,10 +188,58 @@ public class ConversationCanvas : MonoBehaviour
 
 
         }
-        animationRoutine = StartCoroutine(AnimateConversation());
+
+        Voice voice = defaultVoice;
+
+        // hacky, but gonna get voice from avatar database using the transform (finding which child is active) lol
+
+        try
+        {
+            if (messageIsPlayer[currentMessageIndex])
+            {
+                var children = playerAvatarTransform.GetComponentsInChildren<Transform>();
+                foreach (var child in children)
+                {
+                    if (child == playerAvatarTransform)
+                    {
+                        continue;
+                    }
+                    if (child.gameObject.activeSelf)
+                    {
+                        voice = avatarDatabase.avatars[child.GetSiblingIndex()].voice;
+                        Debug.Log("Found player voice: " + voice.Name + ", sibling index: " + child.GetSiblingIndex() + ", child name: " + child.name);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                var children = cpuAvatarTransform.GetComponentsInChildren<Transform>();
+                foreach (var child in children)
+                {
+                    if (child == cpuAvatarTransform)
+                    {
+                        continue;
+                    }
+                    if (child.gameObject.activeSelf)
+                    {
+                        voice = cpuDatabase.avatars[child.GetSiblingIndex()].voice;
+                        Debug.Log("Found cpu voice: " + voice.Name + ", sibling index: " + child.GetSiblingIndex() + ", child name: " + child.name);
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error getting voice: " + e.Message);
+        }
+
+
+        animationRoutine = StartCoroutine(AnimateConversation(voice));
 
         // swap the triangles
-        if (messageLeftAlignments[currentMessageIndex])
+        if (messageIsPlayer[currentMessageIndex])
         {
             rightTriangle.DOColor(Color.clear, 0);
             leftTriangle.DOColor(Color.white, 0);
@@ -200,11 +255,33 @@ public class ConversationCanvas : MonoBehaviour
 
 
 
-    private IEnumerator AnimateConversation()
+    private IEnumerator AnimateConversation(Voice voice)
     {
         animatingConversation = true;
         // add to maxVisibleCharacters one by one until we reach the end of the current message
         int endLength = conversationText.maxVisibleCharacters + messageLengths[currentMessageIndex];
+
+        string message = conversationText.GetParsedText().Substring(conversationText.maxVisibleCharacters, messageLengths[currentMessageIndex]);
+
+        // remove the role from the message
+        message = message.Substring(message.IndexOf(":") + 1).Trim();
+
+        Debug.Log("Message: " + message);
+
+        if (voiceRequest == null)
+        {
+            voiceRequest = FindAnyObjectByType<VoiceRequest>();
+        }
+
+        if (voiceRequest != null)
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                StartCoroutine(SendVoiceRequest(message, voice));
+            }
+
+        }
+
         while (conversationText.maxVisibleCharacters < endLength)
         {
             conversationText.maxVisibleCharacters++;
@@ -216,5 +293,14 @@ public class ConversationCanvas : MonoBehaviour
 
         animationRoutine = null;
     }
+
+    private IEnumerator SendVoiceRequest(string msg, Voice voice)
+    {
+        Debug.Log("Sending voice request: " + msg);
+        voiceRequest.SendVoiceRequest(msg, voice);
+        yield return null;
+    }
+
+    private VoiceRequest voiceRequest;
 
 }

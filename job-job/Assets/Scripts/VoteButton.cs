@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using Photon.Realtime;
 using TMPro;
 using Unity.Collections;
 using UnityEngine;
@@ -32,6 +33,8 @@ public class VoteButton : MonoBehaviour
     [SerializeField] private Color scoreBoxFilledColor;
     [SerializeField] private Color scoreBoxNewColor;
 
+    int scoreLimit;
+
 
     private Button button;
 
@@ -41,6 +44,8 @@ public class VoteButton : MonoBehaviour
 
         votingGroup.alpha = 1;
         scoringGroup.alpha = 0;
+
+        scoreLimit = FindObjectOfType<PlayerManager>().scoreLimit;
     }
 
 
@@ -60,6 +65,12 @@ public class VoteButton : MonoBehaviour
         UpdateAvatar(-1, player.avatarIndex.Value);
 
 
+        backgroundImage.color = Color.white;
+        plusOneImage.DOFade(0, 0);
+        botPromptText.color = Color.black;
+        totalVotesGroup.alpha = 0;
+        votingGroup.alpha = 1;
+        scoringGroup.alpha = 0;
     }
 
     public void OnClick()
@@ -122,9 +133,13 @@ public class VoteButton : MonoBehaviour
             {
                 scoreBoxes[i].color = scoreBoxFilledColor;
             }
-            else
+            else if (i < scoreLimit)
             {
                 scoreBoxes[i].color = scoreBoxEmptyColor;
+            }
+            else
+            {
+                scoreBoxes[i].color = Color.clear;
             }
         }
 
@@ -163,9 +178,13 @@ public class VoteButton : MonoBehaviour
             {
                 scoreBoxes[i].color = scoreBoxFilledColor;
             }
-            else
+            else if (i < scoreLimit)
             {
                 scoreBoxes[i].color = scoreBoxEmptyColor;
+            }
+            else
+            {
+                scoreBoxes[i].color = Color.clear;
             }
         }
     }

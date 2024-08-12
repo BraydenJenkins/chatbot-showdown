@@ -58,6 +58,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -6209953102215962293, guid: 167a6fc46af263b4fb53c7aba716221c,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 87
+      objectReference: {fileID: 0}
+    - target: {fileID: -6209953102215962293, guid: 167a6fc46af263b4fb53c7aba716221c,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 87
+      objectReference: {fileID: 0}
+    - target: {fileID: -6209953102215962293, guid: 167a6fc46af263b4fb53c7aba716221c,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 87
+      objectReference: {fileID: 0}
+    - target: {fileID: -6209953102215962293, guid: 167a6fc46af263b4fb53c7aba716221c,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 167a6fc46af263b4fb53c7aba716221c,
         type: 3}
       propertyPath: m_Name
@@ -91,3 +111,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: 537dbc3f027fcc14dbbbae1fef780fc4, type: 3}
+  voice:
+    name: Callum
+    id: N2lVS1w4EtoT3dr4eOWO

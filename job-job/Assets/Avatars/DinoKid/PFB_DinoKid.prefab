@@ -91,3 +91,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 21300000, guid: 5454559aefc166b4baef3bc51490e6db, type: 3}
+  voice:
+    name: Lily
+    id: pFZP5JQG7iQjIQuC4Bku

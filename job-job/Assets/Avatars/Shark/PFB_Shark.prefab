@@ -111,3 +111,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   avatarImage: {fileID: 0}
+  voice:
+    name: Brian
+    id: nPczCjzI2devNBz1zQrb
