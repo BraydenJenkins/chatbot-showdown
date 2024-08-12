@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba8cc17c59858a4580b35c5d0baa5ab, type: 3}
+  m_Name: ActivityDatabase
+  m_EditorClassIdentifier: 
+  activities:
+  - {fileID: 2517746911320528492, guid: 4a63dcf10b81e79419ad35ffd813cc1f, type: 3}
+  - {fileID: 2517746911320528492, guid: 62fa7d45bedf29348bd3231395011694, type: 3}
+  - {fileID: 2517746911320528492, guid: 61a447c08e03c8a49a26be7e3cf9c768, type: 3}
+  - {fileID: 2517746911320528492, guid: 1ec5154e087948f4f92c97239d01a783, type: 3}
+  - {fileID: 2517746911320528492, guid: aa66d690ca0ba0648b4671f6cdd93cad, type: 3}
+  - {fileID: 2517746911320528492, guid: 3f1d227456936034684ec895121d01cc, type: 3}
+  - {fileID: 2517746911320528492, guid: 7fb403733dce0e94aad371ccaea37ec2, type: 3}
+  - {fileID: 2517746911320528492, guid: 5eca31f5c8b8d1e4284de0020c90a61d, type: 3}
+  - {fileID: 2517746911320528492, guid: 34f5b2ebe7d382b4fa13defc41b1b3c0, type: 3}
+  - {fileID: 2517746911320528492, guid: 07bf90f7dce15714bbfd3c83d9156692, type: 3}
+  - {fileID: 2517746911320528492, guid: 60602947e98b5d84faee3fa76ef583e0, type: 3}
+  - {fileID: 2517746911320528492, guid: cfecf75bccb306b44976720b9ad68082, type: 3}
+  - {fileID: 2517746911320528492, guid: a3d584c1ef93b1a44ba506a48fb64779, type: 3}
+  - {fileID: 2517746911320528492, guid: d408ec634271cd54e975393ac07bfeac, type: 3}
+  - {fileID: 2517746911320528492, guid: b60081a48e013e9458751ea7712e5c8a, type: 3}
+  - {fileID: 2517746911320528492, guid: 5ed3d3baeb2fa574a9209def132a9033, type: 3}
+  - {fileID: 2517746911320528492, guid: 8713bd78823dd18408a96c445a2072a7, type: 3}
+  - {fileID: 2517746911320528492, guid: b5cbc7017ea184c47a818d58c971ef60, type: 3}
+  - {fileID: 2517746911320528492, guid: 8de1d9d850040ab409e7ccb0dc26cca3, type: 3}
+  - {fileID: 2517746911320528492, guid: 3a1ac75309b1c2e4e979af399141a849, type: 3}
+  - {fileID: 2517746911320528492, guid: f0fa1897195b81d4ea54cd5d58a78391, type: 3}
+  - {fileID: 2517746911320528492, guid: e4f77858a42ee154f8da5f575eb6b2ae, type: 3}
+  - {fileID: 2517746911320528492, guid: 25cb9ab91e16734439325cb8f934472b, type: 3}

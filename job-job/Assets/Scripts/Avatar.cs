@@ -1,18 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using ElevenLabs.Voices;
 using UnityEngine;
 
-public class Avatar : MonoBehaviour
+namespace ARAI
 {
-    // Start is called before the first frame update
-    void Start()
+    public class Avatar : MonoBehaviour
     {
-        
+        public Sprite avatarImage;
+
+        public Voice voice;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

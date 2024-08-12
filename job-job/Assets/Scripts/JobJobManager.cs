@@ -28,7 +28,7 @@ public class JobJobManager : NetworkBehaviour
     {
         if (IsServer)
         {
-            serverCanvas.gameObject.SetActive(true);
+            // serverCanvas.gameObject.SetActive(true);
         }
     }
 

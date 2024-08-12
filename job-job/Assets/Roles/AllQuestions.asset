@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f03f27a11e47b04e8ecb3841699accf, type: 3}
+  m_Name: AllQuestions
+  m_EditorClassIdentifier: 
+  questions:
+  - Who is the most irritating person to sit next to on a plane? Describe their behavior.
+  - "What\u2019s the most bizarre profession you\u2019ve ever heard of? What makes
+    it so strange?"
+  - "Who\u2019s the most annoying coworker you\u2019ve ever had? What did they do
+    that drove you crazy?"
+  - "What\u2019s the worst type of boss to have? Give them a fitting title and describe
+    their management style."
+  - "Who\u2019s the most obnoxious online commenter? What kind of things do they
+    post?"
+  - Describe the worst neighbor ever. What are their habits that make them so unbearable?
+  - "What\u2019s the most pretentious job title you can think of? What kind of person
+    would have it?"
+  - "Who\u2019s the strangest person you\u2019ve ever met at a party? What made them
+    stand out?"
+  - Describe someone with the most ridiculous fashion sense. What do they wear, and
+    why?
+  - Who is the most infuriating driver on the road? What do they do that drives you
+    crazy?
+  - "What\u2019s the worst kind of customer to deal with in retail? Describe their
+    behavior."
+  - "Who\u2019s the most annoying person to have in a group project? What do they
+    do that\u2019s so frustrating?"
+  - Describe the most obnoxious person at the gym. What are their habits?
+  - "What\u2019s the most ridiculous celebrity you\u2019ve seen on social media?
+    What makes their posts so absurd?"
+  - "Who\u2019s the worst kind of person to have at a dinner party? What makes them
+    such a bad guest?"
+  - Who is the most unbearable person to argue with? What makes debating with them
+    so frustrating?
+  - "What\u2019s the worst kind of person to be stuck in an elevator with? Describe
+    their behavior."
+  - "Who\u2019s the most aggravating person in a waiting room? What do they do to
+    annoy everyone?"
+  - "What\u2019s the most obnoxious thing someone can do at a wedding? Describe the
+    person who would do it."
+  - "Who is the most fascinating person you\u2019ve ever met? What makes them so
+    interesting?"
+  - "Describe someone with the most unusual talent you\u2019ve ever seen. What can
+    they do?"
+  - "Who\u2019s the most eccentric person in your neighborhood? What makes them stand
+    out?"
+  - "What\u2019s the quirkiest habit someone you know has? Describe the person and
+    their habit."
+  - Describe a person who has the weirdest collection. What do they collect and why?
+  - "Who\u2019s the most energetic person you\u2019ve ever met? What\u2019s their
+    secret to always being upbeat?"
+  - Describe a person who is incredibly passionate about a strange topic. What is
+    it, and why do they care so much?
+  - Describe someone with a strange but endearing personality quirk. What do they
+    do?
+  - Create a ridiculous conspiracy theory
+  - If you were a villain in a cheesy action movie, what would your evil plan be?
+  - 'If you were the ruler of your own country, what strange law would you enforce
+    and who would you enforce them on? '
+  - Invent a useless invention and explain how it works.
+  - Create a completely unnecessary holiday. What would people celebrate, and how?
+  - If you could give any animal a human job, what job would it be and why?
+  - "Imagine you\u2019re a ghost. How would you haunt people in the most ridiculous
+    way?"
+  - If you were a superhero with an embarrassing weakness, what would it be?
+  - Invent a fictional sport and describe its weird rules.
+  - Create a fake reality TV show.
+  - If you could create a new trend that everyone would follow, what would it be?
+  - Design a ridiculous product that no one needs but everyone wants. What is it?
+  - If you were a wizard with only one spell, what ridiculously specific spell would
+    you choose?
+  - "Create a fake food item that would be a hit despite being totally unnecessary.
+    What\u2019s it made of?"
+  - If you could have any mythical creature as a pet, what would it be and how would
+    you care for it?
+  - Invent a superhero who fights crime in the most unconventional way. How do they
+    do it?
+  - If you could bring any inanimate object to life, which one would you choose and
+    why?
+  - If you were a mad scientist, what bizarre experiment would you conduct?
+  - If you could create a secret society, what weird rituals would members have to
+    follow?
+  - Create a new app that does something totally pointless but fun. What does it
+    do?
+  - Create a new mythical creature with ridiculous powers. What is it, and what can
+    it do?
+  - Invent a fake university course with the most absurd syllabus. What would the
+    course cover?
+  - If you could be the mascot for any strange cause, what would it be and how would
+    you represent it?
+  - Imagine you could combine two animals into one creature. What would it be, and
+    what would it look like?
+  - "List all the memes you can\u2019t stop sending to friends."
+  - If you could describe someone using only three unusual words, what words would
+    you choose and who would they describe?
+  - What are traits you hate in people?
+  - Names some items in your Amazon wishlist.
+  - Name the best and worst characters from a video game.
+  - List your favorite childhood teachers and what made them great.
+  - Describe your worst enemy.
+  - 'List your childhood bullies and describe them. '

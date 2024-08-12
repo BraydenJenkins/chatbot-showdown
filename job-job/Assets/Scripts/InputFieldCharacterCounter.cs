@@ -8,6 +8,7 @@ public class InputFieldCharacterCounter : MonoBehaviour
 {
     private TMP_InputField inputField;
     [SerializeField] private TMP_Text characterCountText;
+    [SerializeField] private int minimumCharactersToShow = 0;
 
     private int limit;
 
@@ -29,6 +30,11 @@ public class InputFieldCharacterCounter : MonoBehaviour
 
     private void UpdateCharacterCount(string value)
     {
+        if (value.Length < minimumCharactersToShow)
+        {
+            characterCountText.text = "";
+            return;
+        }
         characterCountText.text = value.Length.ToString() + "/" + limit;
     }
 }

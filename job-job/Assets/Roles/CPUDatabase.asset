@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4d25ce9cbf9d7943af1cab1539b8157, type: 3}
+  m_Name: CPUDatabase
+  m_EditorClassIdentifier: 
+  avatars:
+  - {fileID: 5375852535483168489, guid: 1793a78a23cc4504190d1ca5e0d9c90c, type: 3}
+  - {fileID: 3610320322596448320, guid: c68ccead1d8b30345a00ed47a553f153, type: 3}
+  - {fileID: 4166095249681201060, guid: a12afe78033d4bc45b4bdd47fc3e7849, type: 3}
+  - {fileID: 3595250515388908024, guid: a716328c0ba2f4d47850a6679bb70950, type: 3}
+  - {fileID: 3202871268602092880, guid: dbbe4de31e6cae943a33d8990b733101, type: 3}
+  - {fileID: 2927958726189255696, guid: c82a257fdafd9fb47bb4b069faa512fa, type: 3}
+  - {fileID: 5852032459639109635, guid: e7030568869d2084f8a1c74f104607bd, type: 3}
+  - {fileID: 2131119273278955386, guid: 84ce957f11b6bc546979f0d1b5d75ef3, type: 3}
+  - {fileID: 2119612441775067681, guid: c1b407230a73b8343b4fcd7886089067, type: 3}
