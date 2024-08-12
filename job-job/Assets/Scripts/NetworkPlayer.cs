@@ -48,11 +48,14 @@ public class NetworkPlayer : NetworkBehaviour
     private bool activityStarted = false;
 
     public NetworkVariable<FixedString4096Bytes> currentConversation = new NetworkVariable<FixedString4096Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString512Bytes> currentBotPrompt = new NetworkVariable<FixedString512Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> currentAvatarIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public NetworkVariable<int> currentConversationIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public NetworkVariable<ulong> votedPlayer = new NetworkVariable<ulong>(ulong.MaxValue, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<int> votes = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> score = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private RolesManager rolesManager;
 
@@ -131,6 +134,8 @@ public class NetworkPlayer : NetworkBehaviour
         myTurn.OnValueChanged += OnMyTurnChanged;
 
         currentConversation.OnValueChanged += OnCurrentConversationChanged;
+        currentBotPrompt.OnValueChanged += OnCurrentBotPromptChanged;
+        currentAvatarIndex.OnValueChanged += SetConversationAvatar;
 
         currentConversationIndex.OnValueChanged += OnConversationIndexChanged;
 
@@ -151,6 +156,24 @@ public class NetworkPlayer : NetworkBehaviour
             Debug.LogWarning("RolesManager not found, timer will not be updated");
         }
 
+    }
+
+    private void SetConversationAvatar(int previousValue, int newValue)
+    {
+        Debug.Log("Setting conversation avatar to " + newValue);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetConversationAvatar(newValue);
+        }
+    }
+
+    private void OnCurrentBotPromptChanged(FixedString512Bytes previousValue, FixedString512Bytes newValue)
+    {
+        Debug.Log("Current bot prompt changed from " + previousValue + " to " + newValue);
+        if (IsLocalPlayer)
+        {
+            playerManager.Roles_SetBotPrompt(newValue.ToString());
+        }
     }
 
     #region Job Job
@@ -293,6 +316,15 @@ public class NetworkPlayer : NetworkBehaviour
 
         rolesManager.AdvanceConversationRpc(OwnerClientId);
     }
+
+    public void EndGameOnServer()
+    {
+        if (rolesManager == null)
+            rolesManager = FindObjectOfType<RolesManager>();
+
+        rolesManager.EndGameRpc();
+    }
+
 
     private void OnVotingChanged(int previous, int current)
     {

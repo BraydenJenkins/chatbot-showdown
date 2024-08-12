@@ -173,6 +173,7 @@ MonoBehaviour:
   outline: {fileID: 8659448345521218859}
   border: {fileID: 3724352014315312895}
   altBorder: {fileID: 1349280603886740767}
+  avatarImage: {fileID: 8523944225098989318}
 --- !u!1 &4501177985547273527
 GameObject:
   m_ObjectHideFlags: 0

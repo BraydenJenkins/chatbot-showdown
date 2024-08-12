@@ -201,7 +201,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   navTarget: {fileID: 4772731854395449451}
-  activityDescription: Rizz the barista
+  activityDescription: Flirt with the barista
+  roleName: Barista who's over it
+  conversationStarter: Hi, welcome to Starbucks. What can I get for you today?
+  avatarIndex: 0
 --- !u!1001 &6618209296567054995
 PrefabInstance:
   m_ObjectHideFlags: 0

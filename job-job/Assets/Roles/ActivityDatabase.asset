@@ -13,4 +13,17 @@ MonoBehaviour:
   m_Name: ActivityDatabase
   m_EditorClassIdentifier: 
   activities:
+  - {fileID: 2517746911320528492, guid: 4a63dcf10b81e79419ad35ffd813cc1f, type: 3}
+  - {fileID: 2517746911320528492, guid: 62fa7d45bedf29348bd3231395011694, type: 3}
   - {fileID: 2517746911320528492, guid: 61a447c08e03c8a49a26be7e3cf9c768, type: 3}
+  - {fileID: 2517746911320528492, guid: 1ec5154e087948f4f92c97239d01a783, type: 3}
+  - {fileID: 2517746911320528492, guid: aa66d690ca0ba0648b4671f6cdd93cad, type: 3}
+  - {fileID: 2517746911320528492, guid: 3f1d227456936034684ec895121d01cc, type: 3}
+  - {fileID: 2517746911320528492, guid: 7fb403733dce0e94aad371ccaea37ec2, type: 3}
+  - {fileID: 2517746911320528492, guid: 5eca31f5c8b8d1e4284de0020c90a61d, type: 3}
+  - {fileID: 2517746911320528492, guid: 34f5b2ebe7d382b4fa13defc41b1b3c0, type: 3}
+  - {fileID: 2517746911320528492, guid: 07bf90f7dce15714bbfd3c83d9156692, type: 3}
+  - {fileID: 2517746911320528492, guid: 60602947e98b5d84faee3fa76ef583e0, type: 3}
+  - {fileID: 2517746911320528492, guid: cfecf75bccb306b44976720b9ad68082, type: 3}
+  - {fileID: 2517746911320528492, guid: a3d584c1ef93b1a44ba506a48fb64779, type: 3}
+  - {fileID: 2517746911320528492, guid: d408ec634271cd54e975393ac07bfeac, type: 3}

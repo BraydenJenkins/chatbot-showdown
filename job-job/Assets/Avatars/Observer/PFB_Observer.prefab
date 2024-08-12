@@ -90,4 +90,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f312d6c9d431324eb676abe4a37d1b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  avatarImage: {fileID: 21300000, guid: 1f1bd90bcbd477e47a41567fb342ce3f, type: 3}
+  avatarImage: {fileID: 21300000, guid: 8fe615c29f11d554782e1e9ba750ab68, type: 3}

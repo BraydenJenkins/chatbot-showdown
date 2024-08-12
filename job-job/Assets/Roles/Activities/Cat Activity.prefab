@@ -202,6 +202,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   navTarget: {fileID: 4772731854395449451}
   activityDescription: Convince the cat to let you pet it
+  roleName: Grumpy Cat
+  conversationStarter: meow (I don't know you, and I don't like you.)
+  avatarIndex: 1
 --- !u!1001 &6618209296567054995
 PrefabInstance:
   m_ObjectHideFlags: 0

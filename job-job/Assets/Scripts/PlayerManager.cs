@@ -108,7 +108,8 @@ public class PlayerManager : MonoBehaviour
             avatarInstances[i] = avatar;
 
             var button = Instantiate(avatarButtonPrefab, avatarButtonArea);
-            button.GetComponentInChildren<Image>().sprite = avatarDatabase.avatars[i].avatarImage;
+            // button.GetComponentInChildren<Image>().sprite = avatarDatabase.avatars[i].avatarImage;
+            button.GetComponent<AvatarButton>().avatarImage.sprite = avatarDatabase.avatars[i].avatarImage;
             int index = i;
             button.onClick.AddListener(() =>
             {
@@ -268,8 +269,9 @@ public class PlayerManager : MonoBehaviour
 
     // activity
     [SerializeField] private CanvasGroup activityIntroCanvas, activityGoalCanvas;
-    [SerializeField] private TMP_Text activityText, activityGoalText, playerTurnText;
+    [SerializeField] private TMP_Text activityText, activityGoalText, playerTurnText, currentPromptText;
     [SerializeField] private ActivityDatabase activityDatabase;
+    [SerializeField] private AvatarDatabase cpuAvatarDatabase;
     [SerializeField] private GameObject activityParent;
     private RolesActivity currentActivity;
     [SerializeField] private ConversationCanvas conversationCanvas;
@@ -277,9 +279,19 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private Button nextLineButton;
     private bool myTurn = false;
 
+    [SerializeField] private Transform playerAvatarParent;
+    private ARAI.Avatar[] conversationAvatarInstances;
+    [SerializeField] private Transform cpuAvatarParent;
+    private ARAI.Avatar[] cpuAvatarInstances;
+    [SerializeField] private float conversationAvatarScale = 1f;
+
+
     // voting
     [SerializeField] private CanvasGroup votingCanvas;
     [SerializeField] private VoteButton[] voteButtons;
+    [SerializeField] private CanvasGroup votingTitleCanvas, votingScoresCanvas;
+    [SerializeField] private Button nextRoundButton;
+    [SerializeField] private TMP_Text nextRoundTMP;
 
 
     private void Roles_Awake()
@@ -296,16 +308,96 @@ public class PlayerManager : MonoBehaviour
         SetCanvasGroup(activityGoalCanvas, false);
         SetCanvasGroup(conversationCanvasGroup, false);
         SetCanvasGroup(votingCanvas, false);
+        SetCanvasGroup(votingTitleCanvas, false);
+        SetCanvasGroup(votingScoresCanvas, false);
         playerTurnText.transform.parent.GetComponent<Image>().DOFade(0, 0);
 
         nextLineButton.gameObject.SetActive(false);
 
         questionsAnswered = 0;
 
+        PopulatePlayerAvatarSlot();
+        PopulateCPUAvatarSlot();
+
 
         // ridiculous input field workarounds (jfc unity)
         roleAnswerInputField.onEndEdit.AddListener(Roles_OnEndEdit);
         roleAnswerInputField.onTouchScreenKeyboardStatusChanged.AddListener(Roles_OnTouchScreenKeyboardStatusChanged);
+    }
+
+    private void PopulatePlayerAvatarSlot()
+    {
+        // instantiate one of each avatar in the player avatar slot, and set all to false
+        conversationAvatarInstances = new ARAI.Avatar[avatarDatabase.avatars.Length];
+        for (int i = 0; i < avatarDatabase.avatars.Length; i++)
+        {
+            var avatar = Instantiate(avatarDatabase.avatars[i], playerAvatarParent);
+            conversationAvatarInstances[i] = avatar;
+            avatar.transform.localScale = Vector3.one * conversationAvatarScale;
+            avatar.transform.localPosition = Vector3.zero;
+            avatar.transform.localEulerAngles = Vector3.zero;
+            avatar.GetComponent<Animator>().runtimeAnimatorController = avatarSelectionController;
+            avatar.gameObject.SetActive(false);
+        }
+    }
+
+    private void PopulateCPUAvatarSlot()
+    {
+        // instantiate one of each avatar in the player avatar slot, and set all to false
+        cpuAvatarInstances = new ARAI.Avatar[cpuAvatarDatabase.avatars.Length];
+        for (int i = 0; i < cpuAvatarDatabase.avatars.Length; i++)
+        {
+            var avatar = Instantiate(cpuAvatarDatabase.avatars[i], cpuAvatarParent);
+            cpuAvatarInstances[i] = avatar;
+            avatar.transform.localScale = Vector3.one * conversationAvatarScale;
+            avatar.transform.localPosition = Vector3.zero;
+            avatar.transform.localEulerAngles = Vector3.zero;
+            avatar.GetComponent<Animator>().runtimeAnimatorController = avatarSelectionController;
+            avatar.gameObject.SetActive(false);
+        }
+    }
+
+    private int currentConversationAvatar = -1;
+
+    public void Roles_SetConversationAvatar(int index)
+    {
+        // // set all avatars to inactive
+        // for (int i = 0; i < conversationAvatarInstances.Length; i++)
+        // {
+        //     conversationAvatarInstances[i].gameObject.SetActive(false);
+        // }
+        // // set selected avatar to active
+        // conversationAvatarInstances[index].gameObject.SetActive(true);
+
+        currentConversationAvatar = index;
+    }
+
+    private void SwapConversationAvatar()
+    {
+        // set all avatars to inactive
+        for (int i = 0; i < conversationAvatarInstances.Length; i++)
+        {
+            conversationAvatarInstances[i].gameObject.SetActive(false);
+        }
+        // set selected avatar to active
+        if (currentConversationAvatar >= 0 && currentConversationAvatar < conversationAvatarInstances.Length)
+        {
+            conversationAvatarInstances[currentConversationAvatar].gameObject.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("Invalid conversation avatar index: " + currentConversationAvatar);
+        }
+    }
+    private void SwapCPUAvatar()
+    {
+        // set all avatars to inactive
+        for (int i = 0; i < cpuAvatarInstances.Length; i++)
+        {
+            cpuAvatarInstances[i].gameObject.SetActive(false);
+        }
+        // set selected avatar to active
+        cpuAvatarInstances[currentActivity.avatarIndex].gameObject.SetActive(true);
     }
 
     private void Roles_Update()
@@ -321,12 +413,21 @@ public class PlayerManager : MonoBehaviour
                 timerRunning = false;
             }
         }
+
+        nextLineButton.interactable = nextLineInteractableBase && !conversationCanvas.animatingConversation;
     }
 
     public void Roles_SetQuestion(string question)
     {
         // going to treat this as beginning of the whole game too (first time it is called, that is)
         SetCanvasGroup(mainCanvas, false, transitionDuration);
+
+        // in case this was called after the first activity, we need to also reset the activity and all other screens
+        activityParent.SetActive(false);
+        SetCanvasGroup(votingCanvas, false, transitionDuration);
+        SetCanvasGroup(votingTitleCanvas, false, transitionDuration);
+        SetCanvasGroup(votingScoresCanvas, false, transitionDuration);
+
 
         questionsAnswered++;
         string questionIntro = GetOrdinal(questionsAnswered) + " question";
@@ -452,6 +553,7 @@ public class PlayerManager : MonoBehaviour
 
     public void Roles_SetOptions(string options)
     {
+
         var optionsArray = options.Split(';');
         for (int i = 0; i < optionsArray.Length; i++)
         {
@@ -459,14 +561,30 @@ public class PlayerManager : MonoBehaviour
             {
                 continue;
             }
-            var button = Instantiate(wordButtonPrefab, roleOptionsArea);
-            button.GetComponentInChildren<TMP_Text>().text = optionsArray[i];
-            string option = optionsArray[i];
-            button.onClick.AddListener(() =>
+            // split again on spaces
+            var words = optionsArray[i].Split(' ');
+            for (int j = 0; j < words.Length; j++)
             {
-                roleOptionsText.text += option + " ";
-            });
+                if (string.IsNullOrEmpty(words[j]))
+                {
+                    continue;
+                }
+                var button = Instantiate(wordButtonPrefab, roleOptionsArea);
+                button.GetComponentInChildren<TMP_Text>().text = words[j];
+                string option = words[j];
+                button.onClick.AddListener(() =>
+                {
+                    roleOptionsText.text += option + " ";
+                });
+            }
         }
+
+        // shuffle child index in roleOptionsArea
+        for (int i = 0; i < roleOptionsArea.childCount; i++)
+        {
+            roleOptionsArea.GetChild(i).SetSiblingIndex(UnityEngine.Random.Range(0, roleOptionsArea.childCount));
+        }
+
 
         // SetCanvasGroup(rolesQuestionPanel, false, transitionDuration);
         // SetCanvasGroup(promptIntroPanel, true, transitionDuration);
@@ -484,7 +602,20 @@ public class PlayerManager : MonoBehaviour
 
         var activity = activityDatabase.activities[index];
 
-        roleOptionsActivityText.text = activity.activityDescription;
+        string activityDescription = activity.activityDescription;
+        // add a newline on the last space before 25 characters if the description is too long
+        if (activityDescription.Length > 30)
+        {
+            int lastSpace = activityDescription.Substring(0, 30).LastIndexOf(' ');
+            if (lastSpace > 0)
+            {
+                activityDescription = activityDescription.Substring(0, lastSpace) + "\n" + activityDescription.Substring(lastSpace + 1);
+            }
+        }
+
+
+
+        roleOptionsActivityText.text = activityDescription;
         activityText.text = activity.activityDescription;
         activityGoalText.text = activity.activityDescription;
 
@@ -554,6 +685,8 @@ public class PlayerManager : MonoBehaviour
 
     private IEnumerator Roles_ShowActivityFlow()
     {
+        playerAvatarParent.transform.DOLocalMoveX(-300, 0);
+        cpuAvatarParent.transform.DOLocalMoveX(300, 0);
         SetCanvasGroup(activityIntroCanvas, true, transitionDuration);
         yield return new WaitForSeconds(questionIntroDelay);
         SetCanvasGroup(activityIntroCanvas, false, transitionDuration);
@@ -563,9 +696,12 @@ public class PlayerManager : MonoBehaviour
 
         SetCanvasGroup(conversationPanel, true, transitionDuration);
 
+
+
+
         // TODO: decide how to handle the background / ar and when to toggle
         // right now, I'm building for AR first, so when the activity is set, we'll just toggle the background off
-        SetCanvasGroup(rolesBackground, false, transitionDuration);
+        // SetCanvasGroup(rolesBackground, false, transitionDuration);
 
         StartCoroutine(ShowPlayerTurn());
     }
@@ -587,20 +723,38 @@ public class PlayerManager : MonoBehaviour
             }
         }
 
-        StartCoroutine(ShowPlayerTurn());
+        // if this is the very first turn, don't do that coroutine since it is done in ShowActivityFlow
+
+        if (turnOrder.Count != networkPlayers.Length)
+        {
+            StartCoroutine(ShowPlayerTurn());
+        }
+
 
     }
+
+    bool nextLineInteractableBase = false;
+
     private IEnumerator ShowPlayerTurn()
     {
-        nextLineButton.interactable = false;
+        Debug.Log("Show player turn");
+        nextLineInteractableBase = false;
         SetCanvasGroup(conversationCanvasGroup, false, transitionDuration);
         playerTurnText.DOFade(1, transitionDuration);
         playerTurnText.transform.parent.GetComponent<Image>().DOFade(1, transitionDuration);
-        yield return new WaitForSeconds(2);
+        playerAvatarParent.transform.DOLocalMoveX(-300, 1);
+        cpuAvatarParent.transform.DOLocalMoveX(300, 1);
+        yield return new WaitForSeconds(1);
+        SwapConversationAvatar();
+        SwapCPUAvatar();
+        playerAvatarParent.transform.DOLocalMoveX(-93, 1);
+        cpuAvatarParent.transform.DOLocalMoveX(93, 1);
+        yield return new WaitForSeconds(1);
         playerTurnText.DOFade(0, transitionDuration);
         playerTurnText.transform.parent.GetComponent<Image>().DOFade(0, transitionDuration);
         SetCanvasGroup(conversationCanvasGroup, true, transitionDuration);
-        nextLineButton.interactable = true;
+        nextLineInteractableBase = true;
+
     }
 
     public void Roles_SetConversation(Conversation conversation)
@@ -620,6 +774,11 @@ public class PlayerManager : MonoBehaviour
         myTurn = turn;
 
         nextLineButton.gameObject.SetActive(turn);
+    }
+
+    public void Roles_SetBotPrompt(string prompt)
+    {
+        currentPromptText.text = prompt;
     }
 
     public void Roles_AdvanceConversation()
@@ -650,8 +809,19 @@ public class PlayerManager : MonoBehaviour
 
     public void Roles_GoToVoting()
     {
+        SetCanvasGroup(rolesBackground, true, transitionDuration);
         SetCanvasGroup(conversationCanvasGroup, false, transitionDuration);
+        SetCanvasGroup(conversationPanel, false, transitionDuration);
         SetCanvasGroup(votingCanvas, true, transitionDuration);
+        SetCanvasGroup(votingTitleCanvas, true, transitionDuration);
+        SetCanvasGroup(votingScoresCanvas, false);
+
+        // tween avatar slots out
+        playerAvatarParent.transform.DOLocalMoveX(-300, 1);
+        cpuAvatarParent.transform.DOLocalMoveX(300, 1);
+        // if you are on wide screen this doesn't work, lol
+        // screw it, I'll fix it later
+        // TODO: fix this
 
         // set up voting buttons
 
@@ -707,7 +877,83 @@ public class PlayerManager : MonoBehaviour
         {
             button.ShowTotalVotes();
         }
+
+        StartCoroutine(Roles_ShowScoresAfterDelay(3));
     }
+
+    private IEnumerator Roles_ShowScoresAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Roles_ShowScores();
+        yield return new WaitForSeconds(3);
+        Roles_ShowTotalScores();
+    }
+
+    public void Roles_ShowScores()
+    {
+        SetCanvasGroup(votingScoresCanvas, true, transitionDuration);
+        SetCanvasGroup(votingTitleCanvas, false, transitionDuration);
+
+        // go through all players and denote first, second, third.
+        var networkPlayers = FindObjectsOfType<NetworkPlayer>();
+        Array.Sort(networkPlayers, (a, b) => b.votes.Value.CompareTo(a.votes.Value));
+
+        foreach (var button in voteButtons)
+        {
+            button.ShowNewScores(Array.IndexOf(networkPlayers, button.GetNetworkPlayer()) + 1);
+        }
+
+        nextRoundButton.interactable = false;
+
+        bool scoreLimitReached = false;
+        foreach (var player in networkPlayers)
+        {
+            if (player.score.Value >= 10)
+            {
+                scoreLimitReached = true;
+                break;
+            }
+        }
+
+        if (scoreLimitReached)
+        {
+            nextRoundTMP.text = "Finish game";
+            nextRoundButton.onClick.AddListener(Roles_EndGame);
+
+        }
+        else
+        {
+            nextRoundTMP.text = "Start next round";
+            nextRoundButton.onClick.AddListener(Roles_StartNextActivity);
+        }
+
+    }
+
+    private void Roles_EndGame()
+    {
+        nextRoundButton.onClick.RemoveAllListeners();
+        networkPlayer.EndGameOnServer();
+    }
+
+    private void Roles_StartNextActivity()
+    {
+        nextRoundButton.onClick.RemoveAllListeners();
+
+        var rolesManager = FindObjectOfType<RolesManager>();
+        rolesManager.SendRoleQuestions();
+    }
+
+    private void Roles_ShowTotalScores()
+    {
+        foreach (var button in voteButtons)
+        {
+            button.ShowTotalScore();
+        }
+
+        nextRoundButton.interactable = true;
+    }
+
+
 
     #endregion
 
@@ -719,7 +965,18 @@ public class PlayerManager : MonoBehaviour
         canvasGroup.interactable = active;
         canvasGroup.blocksRaycasts = active;
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
+
+        if (active)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
+            // get all content size fitters and rebuild them
+            // idgaf if this is inefficient, I'm tired of content size fitters not updating
+            var contentSizeFitters = canvasGroup.GetComponentsInChildren<ContentSizeFitter>();
+            foreach (var contentSizeFitter in contentSizeFitters)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(contentSizeFitter.GetComponent<RectTransform>());
+            }
+        }
 
     }
 }

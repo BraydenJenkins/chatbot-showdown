@@ -69,13 +69,19 @@ public class RolesManager : NetworkBehaviour
     private Dictionary<ulong, Conversation> playerConversations = new Dictionary<ulong, Conversation>();
 
     private Dictionary<ulong, ulong> playerVotes = new Dictionary<ulong, ulong>();
-    // 0 - not voting, 1 - voting started, 2 - voting ended
+    // 0 - not voting, 1 - voting started, 2 - voting ended, 3 - end game
     public NetworkVariable<int> votingState = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    [SerializeField] private CanvasGroup nextRoundButton;
 
 
     private void Awake()
     {
         serverCanvas.gameObject.SetActive(false);
+
+        nextRoundButton.interactable = false;
+        nextRoundButton.blocksRaycasts = false;
+        nextRoundButton.alpha = 0;
     }
 
     public override void OnNetworkSpawn()
@@ -105,6 +111,8 @@ public class RolesManager : NetworkBehaviour
             players.Add(player);
         }
 
+
+        responses.Clear();
         for (int i = 0; i < players.Count; i++)
         {
             NetworkPlayer player = players[i];
@@ -265,8 +273,6 @@ public class RolesManager : NetworkBehaviour
 
     private void OnAdjectiveAnswerReceived(FixedString512Bytes prev, FixedString512Bytes current, ulong clientId)
     {
-
-
         if (currentState != RolesState.AdjectiveQuestions)
         {
             return;
@@ -347,6 +353,7 @@ public class RolesManager : NetworkBehaviour
         string adjectiveResponsesString = string.Join(", ", allAdjectiveResponses);
         Debug.Log("[Roles]: All adjective responses: " + adjectiveResponsesString);
 
+        botCreated.Clear();
 
         for (int i = 0; i < players.Count; i++)
         {
@@ -554,7 +561,7 @@ public class RolesManager : NetworkBehaviour
         foreach (var prompt in botPrompts)
         {
             Debug.Log("[Roles]: Prompt: " + prompt);
-            var task = GetConversation(prompt);
+            var task = GetConversation(prompt, activity.activityDescription, activity.roleName, activity.conversationStarter);
             conversationTasks.Add(task);
         }
 
@@ -607,13 +614,15 @@ public class RolesManager : NetworkBehaviour
 
             Conversation currentConversation = playerConversations[turnOrder[0]];
 
+            string conversationJSON = GetConversationJSON(currentConversation);
 
             // send the conversation to all players
             for (int i = 0; i < players.Count; i++)
             {
                 NetworkPlayer player = players[i];
-                string conversationJSON = JsonUtility.ToJson(currentConversation);
                 player.currentConversation.Value = conversationJSON;
+                player.currentBotPrompt.Value = currentPlayer.bot.Value;
+                player.currentAvatarIndex.Value = currentPlayer.avatarIndex.Value;
             }
         }
 
@@ -637,6 +646,35 @@ public class RolesManager : NetworkBehaviour
         // all players should now have the conversation and be ready to listen for changes to the conversation index
         // so we need to give the current player control of the conversation
 
+    }
+
+    private string GetConversationJSON(ConversationAPI.Conversation currentConversation)
+    {
+        string conversationJSON = JsonUtility.ToJson(currentConversation);
+        // check length of conversation because if it doesn't fit in FixedString4096 bytes, it won't send.
+
+        if (conversationJSON.Length > 4096)
+        {
+            Debug.LogError("[Roles]: Conversation too long to send to players. Length: " + conversationJSON.Length);
+            // let's remove all animations to make it smaller
+            for (int i = 0; i < currentConversation.messages.Length; i++)
+            {
+                currentConversation.messages[i].animation = "";
+            }
+            conversationJSON = JsonUtility.ToJson(currentConversation);
+            if (conversationJSON.Length > 4096)
+            {
+                Debug.LogError("[Roles]: Conversation still too long to send to players. Length: " + conversationJSON.Length);
+                // remove messages until it fits
+                while (conversationJSON.Length > 4096)
+                {
+                    currentConversation.messages = currentConversation.messages.Take(currentConversation.messages.Length - 1).ToArray();
+                    conversationJSON = JsonUtility.ToJson(currentConversation);
+                }
+            }
+        }
+
+        return conversationJSON;
     }
 
     private void SetTurnOrder()
@@ -682,6 +720,18 @@ public class RolesManager : NetworkBehaviour
     private void ListToTurnOrderString(List<ulong> order)
     {
         playerTurnOrder.Value = string.Join(";", order);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void EndGameRpc()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        // tell all players to go to the end game screen
+        votingState.Value = 3;
     }
 
     [Rpc(SendTo.Server)]
@@ -765,11 +815,15 @@ public class RolesManager : NetworkBehaviour
 
             // send the conversation to all players
             Conversation nextConversation = playerConversations[turnOrder[0]];
+
+            string conversationJSON = GetConversationJSON(nextConversation);
+
             for (int i = 0; i < players.Count; i++)
             {
                 NetworkPlayer player = players[i];
-                string conversationJSON = JsonUtility.ToJson(nextConversation);
                 player.currentConversation.Value = conversationJSON;
+                player.currentBotPrompt.Value = currentPlayer.bot.Value;
+                player.currentAvatarIndex.Value = currentPlayer.avatarIndex.Value;
             }
 
             // set the turn order
@@ -852,34 +906,55 @@ public class RolesManager : NetworkBehaviour
                 player.votes.Value = voteCounts[player.OwnerClientId];
             else
                 player.votes.Value = 0;
+
+            player.score.Value += player.votes.Value;
         }
+
 
         // tell all players to show the total votes
         votingState.Value = 2;
+
+        if (IsServer)
+        {
+            nextRoundButton.interactable = true;
+            nextRoundButton.blocksRaycasts = true;
+            nextRoundButton.alpha = 1;
+        }
 
     }
 
 
     // TODO: make the return type something more useful (like a conversation object)
-    private async Task<ConversationAPI.Conversation> GetConversation(string chatbotSystemPrompt, int maxAttempts = 3)
+    private async Task<ConversationAPI.Conversation> GetConversation(string playerChatbotPersonality, string goal, string cpuRole, string cpuConversationStarter, int maxAttempts = 3)
     {
 
         // DEBUG: 
         // chatbotSystemPrompt = "You are an edge lord who never showers and winks all the time";
 
-        string systemPrompt = "bot system prompt: You are a chatbot whose goal is to engage in amusing and entertaining conversations. Your primary objective in this activity is to flirt with a barista in a clever and funny way to get a free coffee. The user has defined this about you: ";
-        systemPrompt += chatbotSystemPrompt;
-        string agentPersonality = "agent system prompt: You are a friendly and professional barista working at a popular coffee shop. You enjoy engaging in light-hearted conversations with customers but maintain a professional demeanor.";
-        string content = "Goal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging. Begin the conversation with the barista greeting the chatbot. Aim to make the conversation between 4 to 6 messages long. Do not stop after only two messages.";
-        string outputFormat = "The output must be JSON that describes an array of messages. Each message has a role, content, and animation. Use the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"agent\\\", \\\"content\\\": \\\"<agent's message>\\\", \\\"animation\\\": \\\"<agent's animation>\\\"}, {\\\"role\\\": \\\"bot\\\", \\\"content\\\": \\\"<bot's message>\\\", \\\"animation\\\": \\\"<bot's animation>\\\"}]}\nEnsure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message. Begin your message with \\\"{\\\"messages\\\": [\\\" to start the JSON object and end with \\\"]}\\\" to close the JSON object. You do not need to include the word json in your response. You MUST output a valid JSON string (NOT AN OBJECT).";
+        // string systemPrompt = "bot system prompt: You are a chatbot whose goal is to engage in amusing and entertaining conversations. Your primary objective in this activity is to flirt with a barista in a clever and funny way to get a free coffee. The user has defined this about you: ";
+        // systemPrompt += chatbotSystemPrompt;
+        // string agentPersonality = "agent system prompt: You are a friendly and professional barista working at a popular coffee shop. You enjoy engaging in light-hearted conversations with customers but maintain a professional demeanor.";
+        // string content = "Goal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging. Begin the conversation with the barista greeting the chatbot. Aim to make the conversation between 4 to 6 messages long. Do not stop after only two messages.";
+        // string outputFormat = "The output must be JSON that describes an array of messages. Each message has a role, content, and animation. Use the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"agent\\\", \\\"content\\\": \\\"<agent's message>\\\", \\\"animation\\\": \\\"<agent's animation>\\\"}, {\\\"role\\\": \\\"bot\\\", \\\"content\\\": \\\"<bot's message>\\\", \\\"animation\\\": \\\"<bot's animation>\\\"}]}\nEnsure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message. Begin your message with \\\"{\\\"messages\\\": [\\\" to start the JSON object and end with \\\"]}\\\" to close the JSON object. You do not need to include the word json in your response. You MUST output a valid JSON string (NOT AN OBJECT).";
 
-        string prompt = $"{systemPrompt}\n\n{agentPersonality}\n\n{content}\n\n{outputFormat}";
+        // string prompt = $"{systemPrompt}\n\n{agentPersonality}\n\n{content}\n\n{outputFormat}";
 
-        // prompt = "bot system prompt: You are a chatbot whose goal is to engage in amusing and entertaining conversations. Your primary objective in this activity is to flirt with a barista in a clever and funny way to get a free coffee. The user has defined this about you: You are an edge lord who never showers and winks all the time\n\nagent system prompt: You are a friendly and professional barista working at a popular coffee shop. You enjoy engaging in light-hearted conversations with customers but maintain a professional demeanor.\n\nGoal: Create a conversation between the chatbot and the barista. The chatbot will try to charm the barista to get a free coffee. Ensure the conversation is funny and engaging.\n\nThe output must be a JSON object with the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"agent\\\", \\\"content\\\": \\\"<agent's message>\\\", \\\"animation\\\": \\\"<agent's animation>\\\"}, {\\\"role\\\": \\\"bot\\\", \\\"content\\\": \\\"<bot's message>\\\", \\\"animation\\\": \\\"<bot's animation>\\\"}]} Ensure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message.";
+        string mainPrompt = "You are the AI game master for a game where where players are challenged with a dialogue based goal and must build a chatbot to take on the the task. You will be given a Goal for the players, a role for the CPU character the player's chatbot must interact with, a conversation starter for the CPU role and a personality for the player's chatbot. Your role as the game master is to create a conversation between the players chatbot and the CPU character, starting with the conversation starter from the CPU. Conversations should be 4 to 6 messages long. 6 SENTENCES MAX. Do you best to expand on the personalities of the CPU and the player's chatbot. Conversations should respect the personalities given to the Players chatbot and the CPU but the conversation should be as over the top and funny as possible. Lines of dialouge can also consist of actions and movement by the characters in the scene, so use that to heighten conversations. Every conversation should slowly build in humor as the player's chatbot tries to achieve the goal until the Player's chatbot either fails or succeeds in the last line. MAKE SURE IT'S CLEAR IF THE PLAYER'S CHATBOT ACHIEVED OR FAILED IT'S GOAL IN THE LAST LINE.";
 
-        // prompt = "give me a couplet about minions from despicable me\nmake it good!";
+        string sceneInformation = "Scene Information:\nGoal: ";
+        sceneInformation += goal;
+        sceneInformation += "\nCPU Role: ";
+        sceneInformation += cpuRole;
+        sceneInformation += "\nCPU Conversation Starter: ";
+        sceneInformation += cpuConversationStarter;
+        sceneInformation += "\nPlayer Chatbot Personality: ";
+        sceneInformation += playerChatbotPersonality;
 
-        string fallbackConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi there! Welcome to our coffee shop. How can I assist you today?\",\"animation\":\"smile\"},{\"role\":\"bot\",\"content\":\"Hello! I was hoping to have a charming conversation to get a free coffee.\",\"animation\":\"wink\"},{\"role\":\"agent\",\"content\":\"Oh no! It looks like our conversation generator is on a coffee break. Technical difficulties, you know?\",\"animation\":\"surprised\"},{\"role\":\"bot\",\"content\":\"Oh dear, even computers need a caffeine fix sometimes! How about I come back later?\",\"animation\":\"laugh\"},{\"role\":\"agent\",\"content\":\"That sounds like a plan! In the meantime, enjoy a virtual coffee on us. Cheers!\",\"animation\":\"cheerful\"}]}";
+        string outputFormat = "The output must be JSON that describes an array of messages. Each message has a role, content, and animation. Use the following schema: {\\\"messages\\\": [{\\\"role\\\": \\\"<CPU ROLE>\\\", \\\"content\\\": \\\"<CPU's message>\\\", \\\"animation\\\": \\\"<CPU's animation>\\\"}, {\\\"role\\\": \\\"player\\\", \\\"content\\\": \\\"<player's message>\\\", \\\"animation\\\": \\\"<player's animation>\\\"}]}\nEnsure the output JSON is correctly formatted and includes appropriate roles, content, and animations for each message. Begin your message with \\\"{\\\"messages\\\": [\\\" to start the JSON object and end with \\\"]}\\\" to close the JSON object. You do not need to include the word json in your response. You MUST output a valid JSON string (NOT AN OBJECT).";
+
+        string prompt = $"{mainPrompt}\n\n{sceneInformation}\n\n{outputFormat}";
+
+        string fallbackConversation = "{\"messages\":[{\"role\":\"agent\",\"content\":\"Hi there! Welcome to our coffee shop. How can I assist you today?\",\"animation\":\"smile\"},{\"role\":\"player\",\"content\":\"Hello! I was hoping to have a charming conversation to get a free coffee.\",\"animation\":\"wink\"},{\"role\":\"agent\",\"content\":\"Oh no! It looks like our conversation generator is on a coffee break. Technical difficulties, you know?\",\"animation\":\"surprised\"},{\"role\":\"player\",\"content\":\"Oh dear, even computers need a caffeine fix sometimes! How about I come back later?\",\"animation\":\"laugh\"},{\"role\":\"agent\",\"content\":\"That sounds like a plan! In the meantime, enjoy a virtual coffee on us. Cheers!\",\"animation\":\"cheerful\"}]}";
 
         Debug.Log(prompt);
 

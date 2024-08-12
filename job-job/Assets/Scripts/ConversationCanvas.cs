@@ -4,6 +4,8 @@ using UnityEngine;
 using TMPro;
 using ConversationAPI;
 using UnityEngine.UI;
+using DG.Tweening;
+using System;
 
 
 public class ConversationCanvas : MonoBehaviour
@@ -13,13 +15,25 @@ public class ConversationCanvas : MonoBehaviour
     private List<int> messageLengths;
     private int currentMessageIndex = 0;
 
+    public bool animatingConversation = false;
+
+    [SerializeField] private Image leftTriangle, rightTriangle;
+
     public void SetConversation(Conversation conversation)
     {
         List<string> roles = new List<string>();
 
+        int playerRoleIndex = -1;
+
         // get roles from conversation (there should be only two)
-        foreach (var part in conversation.messages)
+        for (int i = 0; i < conversation.messages.Length; i++)
         {
+            Message part = conversation.messages[i];
+            if (part.role.ToLower() == "player")
+            {
+                playerRoleIndex = i;
+            }
+
             if (!roles.Contains(part.role))
             {
                 roles.Add(part.role);
@@ -32,18 +46,40 @@ public class ConversationCanvas : MonoBehaviour
             return;
         }
 
+
+
         // TODO: do we reliably know who starts the conversation?
         // for now, assume the agent (not player) starts the conversation
-        // agent is left aligned
 
-        Dictionary<string, string> roleAlignments = new Dictionary<string, string>
+        // actually, one of the roles SHOULD be "player"
+        // so we can just use that to know who goes first and set up alignment
+
+        // player is on the left, agent is on the right
+
+        Dictionary<string, string> roleAlignments = new Dictionary<string, string>();
+
+        // if no player found, we will just assume the first role is the agent
+        if (playerRoleIndex == -1)
         {
-            { roles[0], "left" },
-            { roles[1], "right" }
-        };
+            Debug.LogError("ConversationCanvas: conversation does not have a player role");
+            roleAlignments.Add(roles[0], "right");
+            roleAlignments.Add(roles[1], "left");
+        }
+        else
+        {
+            if (playerRoleIndex == 0)
+            {
+                roleAlignments.Add(roles[0], "left");
+                roleAlignments.Add(roles[1], "right");
+            }
+            else
+            {
+                roleAlignments.Add(roles[0], "right");
+                roleAlignments.Add(roles[1], "left");
+            }
+        }
 
         messageLengths = new List<int>();
-
         conversationText.maxVisibleCharacters = 0;
         string fullText = "";
         foreach (var part in conversation.messages)
@@ -60,6 +96,9 @@ public class ConversationCanvas : MonoBehaviour
         currentMessageIndex = 0;
 
         Debug.Log("New conversation began.");
+
+        rightTriangle.DOColor(Color.white, 0.25f);
+        leftTriangle.DOColor(Color.clear, 0.25f);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(conversationText.transform.parent.GetComponent<RectTransform>());
     }
@@ -134,8 +173,22 @@ public class ConversationCanvas : MonoBehaviour
                 endLength += messageLengths[i];
             }
             conversationText.maxVisibleCharacters = endLength;
+
+
         }
         animationRoutine = StartCoroutine(AnimateConversation());
+
+        // swap the triangles
+        if (currentMessageIndex % 2 == 0)
+        {
+            rightTriangle.DOColor(Color.clear, 0);
+            leftTriangle.DOColor(Color.white, 0);
+        }
+        else
+        {
+            rightTriangle.DOColor(Color.white, 0);
+            leftTriangle.DOColor(Color.clear, 0);
+        }
 
         currentMessageIndex++;
     }
@@ -144,13 +197,17 @@ public class ConversationCanvas : MonoBehaviour
 
     private IEnumerator AnimateConversation()
     {
+        animatingConversation = true;
         // add to maxVisibleCharacters one by one until we reach the end of the current message
         int endLength = conversationText.maxVisibleCharacters + messageLengths[currentMessageIndex];
         while (conversationText.maxVisibleCharacters < endLength)
         {
             conversationText.maxVisibleCharacters++;
-            yield return new WaitForSeconds(0.05f);
+
+            yield return new WaitForSeconds(0.03f);
         }
+
+        animatingConversation = false;
 
         animationRoutine = null;
     }

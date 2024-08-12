@@ -264,6 +264,13 @@ public class NetworkHelper : MonoBehaviour
         if (active)
         {
             LayoutRebuilder.ForceRebuildLayoutImmediate(canvasGroup.GetComponent<RectTransform>());
+            // get all content size fitters and rebuild them
+            // idgaf if this is inefficient, I'm tired of content size fitters not updating
+            var contentSizeFitters = canvasGroup.GetComponentsInChildren<ContentSizeFitter>();
+            foreach (var contentSizeFitter in contentSizeFitters)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(contentSizeFitter.GetComponent<RectTransform>());
+            }
         }
     }
 }

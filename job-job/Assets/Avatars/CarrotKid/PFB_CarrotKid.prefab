@@ -61,7 +61,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: c3918f56a03c30843b4fcaf43bb9e1a1,
         type: 3}
       propertyPath: m_Name
-      value: 100Avatars_023_Carrot_Kid
+      value: PFB_CarrotKid
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -90,4 +90,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f312d6c9d431324eb676abe4a37d1b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  avatarImage: {fileID: 21300000, guid: 1f1bd90bcbd477e47a41567fb342ce3f, type: 3}
+  avatarImage: {fileID: 21300000, guid: 211d3713b81a2e645afe99e67ac7cd95, type: 3}

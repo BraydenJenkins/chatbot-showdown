@@ -164,7 +164,7 @@ GameObject:
   - component: {fileID: 8130513100389272306}
   - component: {fileID: 2517746911320528492}
   m_Layer: 0
-  m_Name: Gadget Activity
+  m_Name: VampireActivity
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -201,7 +201,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   navTarget: {fileID: 4772731854395449451}
-  activityDescription: Get a discount on a broken gadget
+  activityDescription: Convince the vampire to switch to a vegan diet
+  roleName: Vampire
+  conversationStarter: I prefer my meals to be... full of life.
+  avatarIndex: 6
 --- !u!1001 &6618209296567054995
 PrefabInstance:
   m_ObjectHideFlags: 0

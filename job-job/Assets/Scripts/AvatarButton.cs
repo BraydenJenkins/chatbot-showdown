@@ -10,6 +10,8 @@ public class AvatarButton : MonoBehaviour
     bool useAlt = false;
     bool selected = false;
 
+    public Image avatarImage;
+
     private void Awake()
     {
         // 50 50 chance which border to show
