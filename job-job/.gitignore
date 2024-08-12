@@ -65,3 +65,5 @@ Assets/Scripts/Editor/HuddleUserSettings.asset.meta
 
 Assets/Resources/geminiApiKey.asset
 Assets/Resources/geminiApiKey.asset.meta
+
+Assets/Resources/*.asset
